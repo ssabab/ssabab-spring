@@ -4,9 +4,9 @@
   "settings": {
     "width": 2000,
     "height": 2000,
-    "scrollTop": -417.8057,
-    "scrollLeft": -445,
-    "zoomLevel": 1,
+    "scrollTop": -415.105,
+    "scrollLeft": -226.5868,
+    "zoomLevel": 0.91,
     "show": 431,
     "database": 4,
     "databaseName": "",
@@ -58,6 +58,7 @@
         "comment": "",
         "columnIds": [
           "MTzusMWK2VdoUXFwfnEup",
+          "TfMMG0NYYdkD0aW1gL49D",
           "VYLOx2J0sVhpTXfJGm-hx",
           "7bh8ySuWJVrot5W7tCT62",
           "OSApqq2xR4qDF1RQ0jrXU",
@@ -71,6 +72,7 @@
         ],
         "seqColumnIds": [
           "MTzusMWK2VdoUXFwfnEup",
+          "TfMMG0NYYdkD0aW1gL49D",
           "VYLOx2J0sVhpTXfJGm-hx",
           "7bh8ySuWJVrot5W7tCT62",
           "OSApqq2xR4qDF1RQ0jrXU",
@@ -91,7 +93,7 @@
           "color": ""
         },
         "meta": {
-          "updateAt": 1746590968458,
+          "updateAt": 1746623277018,
           "createAt": 1745732291172
         }
       },
@@ -290,19 +292,19 @@
         "id": "VYLOx2J0sVhpTXfJGm-hx",
         "tableId": "AoBgC2zwAxu2HvHqY9EW7",
         "name": "provider",
-        "comment": "",
+        "comment": "소셜로그인",
         "dataType": "",
         "default": "",
         "options": 0,
         "ui": {
           "keys": 0,
           "widthName": 60,
-          "widthComment": 60,
+          "widthComment": 62,
           "widthDataType": 60,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1745732309052,
+          "updateAt": 1746623288754,
           "createAt": 1745732301026
         }
       },
@@ -310,19 +312,19 @@
         "id": "7bh8ySuWJVrot5W7tCT62",
         "tableId": "AoBgC2zwAxu2HvHqY9EW7",
         "name": "provider_id",
-        "comment": "",
+        "comment": "소셜로그인",
         "dataType": "",
         "default": "",
         "options": 0,
         "ui": {
           "keys": 0,
           "widthName": 61,
-          "widthComment": 60,
+          "widthComment": 62,
           "widthDataType": 60,
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1745732316456,
+          "updateAt": 1746623292926,
           "createAt": 1745732301319
         }
       },
@@ -450,7 +452,7 @@
         "id": "VHssB6jEIYFoyt2uNA7iF",
         "tableId": "AoBgC2zwAxu2HvHqY9EW7",
         "name": "refresh_token",
-        "comment": "",
+        "comment": "확장버전",
         "dataType": "",
         "default": "",
         "options": 0,
@@ -462,7 +464,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1745732595757,
+          "updateAt": 1746623297504,
           "createAt": 1745732586142
         }
       },
@@ -1345,6 +1347,26 @@
           "updateAt": 1746590956523,
           "createAt": 1746590699994
         }
+      },
+      "TfMMG0NYYdkD0aW1gL49D": {
+        "id": "TfMMG0NYYdkD0aW1gL49D",
+        "tableId": "AoBgC2zwAxu2HvHqY9EW7",
+        "name": "password",
+        "comment": "",
+        "dataType": "",
+        "default": "",
+        "options": 0,
+        "ui": {
+          "keys": 0,
+          "widthName": 60,
+          "widthComment": 60,
+          "widthDataType": 60,
+          "widthDefault": 60
+        },
+        "meta": {
+          "updateAt": 1746623624167,
+          "createAt": 1746623271606
+        }
       }
     },
     "relationshipEntities": {
@@ -1358,7 +1380,7 @@
           "columnIds": [
             "MTzusMWK2VdoUXFwfnEup"
           ],
-          "x": 979.4814,
+          "x": 980.4814,
           "y": 858.4904,
           "direction": 4
         },
@@ -1443,7 +1465,7 @@
             "MTzusMWK2VdoUXFwfnEup"
           ],
           "x": 780.4814,
-          "y": 1018.4904,
+          "y": 1030.4904000000001,
           "direction": 1
         },
         "end": {
@@ -1498,8 +1520,8 @@
           "columnIds": [
             "MTzusMWK2VdoUXFwfnEup"
           ],
-          "x": 879.9814,
-          "y": 1178.4904000000001,
+          "x": 880.4814,
+          "y": 1202.4904000000001,
           "direction": 8
         },
         "end": {
@@ -1526,8 +1548,8 @@
           "columnIds": [
             "MTzusMWK2VdoUXFwfnEup"
           ],
-          "x": 1078.9814000000001,
-          "y": 1178.4904000000001,
+          "x": 1080.4814000000001,
+          "y": 1202.4904000000001,
           "direction": 8
         },
         "end": {

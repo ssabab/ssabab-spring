@@ -20,6 +20,11 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // ✅ JPA 추가
+	runtimeOnly 'com.mysql:mysql-connector-j' // ✅ MySQL 드라이버
+	implementation 'org.projectlombok:lombok' // ✅ Lombok 추가
+	annotationProcessor 'org.projectlombok:lombok' // ✅ Lombok 어노테이션 처리기
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
