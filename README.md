@@ -6,19 +6,16 @@
 
 ## API
 
+### Swagger
+[OpenAPI](http://localhost:8080/swagger-ui/index.html)
+
+
 ### [1] MENU
 
-- URL
+- URL : `http://localhost:8080/menu/{date}`
+- Method : `POST`, `GET`, `PUT`, `DELETE`
 
-        http://localhost:8080/menu/{date}
-
-- Method
-  
-        POST, GET, PUT, DELETE
-
-- Header
-
-        None
+- Header : `None`
 
 - Body (POST, PUT)
     ```txt
@@ -73,16 +70,14 @@
 
 ### [2] Review
 
-- URL
-
-        http://localhost:8080/review/{menu_id}
-- Method
-
-        GET, POST, PUT, DELETE
+- URL : `http://localhost:8080/review/{menu_id}`
+- Method : `GET`, `POST`, `PUT`, `DELETE`
 - Header
+    | Key | Value|
+    | --- | --- |
+    | **Content-Type** | application/json |
+    | **user_id** | user_id |
 
-        Content-Type : application/json
-        user_id : {user_id}
 - Body (POST, PUT)
 
     ```txt
