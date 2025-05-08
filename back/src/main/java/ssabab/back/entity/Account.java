@@ -16,7 +16,7 @@ public class Account {
 
     /* ---------- PK 타입 Long 으로 통일 ---------- */
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private Integer userId;
 
     @Column(nullable = false, unique = true) private String email;
     @Column(nullable = false)               private String password;

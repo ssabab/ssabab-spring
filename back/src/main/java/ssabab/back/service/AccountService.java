@@ -41,7 +41,7 @@ public class AccountService {
     }
 
     /* PK 조회 */
-    public AccountDTO findByuserId(Long id) {
+    public AccountDTO findByuserId(Integer id) {
         return accountRepo.findById(id).map(AccountDTO::fromEntity).orElse(null);
     }
 

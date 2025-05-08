@@ -59,7 +59,7 @@ public class AccountController {
 
     @GetMapping("/{userId}")
     @ResponseBody
-    public ResponseEntity<?> findById(@PathVariable Long userId) {
+    public ResponseEntity<?> findById(@PathVariable Integer userId) {
         AccountDTO dto = accountService.findByuserId(userId);
         return dto != null ? ResponseEntity.ok(dto)
                 : ResponseEntity.status(HttpStatus.NOT_FOUND).body("not found");
