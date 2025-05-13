@@ -2,7 +2,7 @@
 
 
 ## ERD
-![alt text](./images/image.png)
+![alt text](./images/image(2).png)
 
 ## API
 
@@ -102,3 +102,6 @@
     }
 
     ```
+
+
+### [3] Account
