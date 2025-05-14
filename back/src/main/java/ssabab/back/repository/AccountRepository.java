@@ -1,11 +1,10 @@
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
 import ssabab.back.entity.Account;
 
-import java.util.Optional;
-
-public interface AccountRepository extends JpaRepository<Account, Integer> {
+public interface AccountRepository extends JpaRepository<Account, INTGER> {
     Optional<Account> findByEmail(String email);
-    boolean existsByEmail(String email);
+    Optional<Account> findByProviderAndProviderId(String provider, String providerId);
 }

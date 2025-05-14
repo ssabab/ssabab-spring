@@ -10,48 +10,71 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
-@RequiredArgsConstructor
+@Service @RequiredArgsConstructor
 public class AccountService {
+    private final AccountRepository repo;
+    private final PasswordEncoder bCrypt;
 
-    private final AccountRepository accountRepo;
-
-    /* 회원가입 */
-    public void save(AccountDTO dto) {
-        if (accountRepo.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("이미 등록된 이메일입니다.");
-        }
-        accountRepo.save(Account.fromDTO(dto));
+    public Account save(AccountDTO dto){
+        Account a = new Account();
+        a.setEmail(dto.getEmail());
+        a.setUsername(dto.getUsername());
+        a.setPassword(bCrypt.encode(dto.getPassword()));
+        a.setRole("ROLE_USER"); a.setActive(true); a.setProvider("LOCAL");
+        return repo.save(a);
     }
 
-    /* 로그인 (성공 시 DTO 반환, 실패 시 null) */
-    public AccountDTO login(AccountDTO dto) {
-        Optional<Account> opt = accountRepo.findByEmail(dto.getEmail());
-        if (opt.isPresent() && opt.get().getPassword().equals(dto.getPassword())) {
-            return AccountDTO.fromEntity(opt.get());
-        }
-        return null;
+    public Account login(AccountDTO dto){
+        return repo.findByEmail(dto.getEmail())
+                   .filter(a -> bCrypt.matches(dto.getPassword(), a.getPassword()))
+                   .orElse(null);
     }
-
-    /* 전체 목록 */
-    public List<AccountDTO> findAll() {
-        return accountRepo.findAll()
-                .stream().map(AccountDTO::fromEntity)
-                .collect(Collectors.toList());
-    }
-
-    /* PK 조회 */
-    public AccountDTO findByuserId(Integer id) {
-        return accountRepo.findById(id).map(AccountDTO::fromEntity).orElse(null);
-    }
-
-    /* 이메일로 조회 (마이페이지 등) */
-    public AccountDTO findByEmail(String email) {
-        return accountRepo.findByEmail(email).map(AccountDTO::fromEntity).orElse(null);
-    }
-
-    /* 이메일 중복 체크 */
-    public boolean emailExists(String email) {
-        return accountRepo.existsByEmail(email);
-    }
+    public void updateAccount(Account a){ repo.save(a); }
 }
+
+
+// @Service
+// @RequiredArgsConstructor
+// public class AccountService {
+
+//     private final AccountRepository accountRepo;
+
+//     /* 회원가입 */
+//     public void save(AccountDTO dto) {
+//         if (accountRepo.existsByEmail(dto.getEmail())) {
+//             throw new IllegalArgumentException("이미 등록된 이메일입니다.");
+//         }
+//         accountRepo.save(Account.fromDTO(dto));
+//     }
+
+//     /* 로그인 (성공 시 DTO 반환, 실패 시 null) */
+//     public AccountDTO login(AccountDTO dto) {
+//         Optional<Account> opt = accountRepo.findByEmail(dto.getEmail());
+//         if (opt.isPresent() && opt.get().getPassword().equals(dto.getPassword())) {
+//             return AccountDTO.fromEntity(opt.get());
+//         }
+//         return null;
+//     }
+
+//     /* 전체 목록 */
+//     public List<AccountDTO> findAll() {
+//         return accountRepo.findAll()
+//                 .stream().map(AccountDTO::fromEntity)
+//                 .collect(Collectors.toList());
+//     }
+
+//     /* PK 조회 */
+//     public AccountDTO findByuserId(Integer id) {
+//         return accountRepo.findById(id).map(AccountDTO::fromEntity).orElse(null);
+//     }
+
+//     /* 이메일로 조회 (마이페이지 등) */
+//     public AccountDTO findByEmail(String email) {
+//         return accountRepo.findByEmail(email).map(AccountDTO::fromEntity).orElse(null);
+//     }
+
+//     /* 이메일 중복 체크 */
+//     public boolean emailExists(String email) {
+//         return accountRepo.existsByEmail(email);
+//     }
+// }
