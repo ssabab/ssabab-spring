@@ -4,25 +4,20 @@ import ssabab.back.entity.Account;
 import lombok.*;
 
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
+@Data
 public class AccountDTO {
-    private INTGER userId;
+    @NotBlank(message = "이메일을 입력해주세요.")
+    @Email(message = "올바른 이메일 형식이 아닙니다.")
     private String email;
+    
+    @NotBlank(message = "비밀번호를 입력해주세요.")
+    @Size(min = 8, message = "비밀번호는 최소 8자리 이상이어야 합니다.")
     private String password;
+    
+    @NotBlank(message = "이름(별칭)을 입력해주세요.")
     private String username;
-
-    public static AccountDTO toAccountDTO(Account account) {
-        AccountDTO dto = new AccountDTO();
-        dto.setUserId(account.getUserId());
-        dto.setEmail(account.getEmail());
-        dto.setUsername(account.getUsername());
-        dto.setPassword(null);  // Do not include password in DTO output
-        return dto;
-    }
+    
+    // 기타 가입 폼 필드가 있다면 추가 (예: 전화번호 등). 로그인시에는 email/password만 사용.
 }
 
 

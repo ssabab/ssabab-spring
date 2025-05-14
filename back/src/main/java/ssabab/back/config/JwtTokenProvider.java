@@ -9,31 +9,56 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
-
-    @Value("${jwt.secret}")     private String secret;
-    @Value("${jwt.expiration}") private long   expiration;
-
-    private Key key() { return Keys.hmacShaKeyFor(secret.getBytes()); }
-
-    public String generateToken(String email, String role) {
+    @Value("${jwt.secret}")
+    private String secretKey;
+    @Value("${jwt.accessTokenExpiration}")
+    private long accessTokenExpiration;
+    @Value("${jwt.refreshTokenExpiration}")
+    private long refreshTokenExpiration;
+    private Key signingKey;
+    
+    @PostConstruct
+    public void init() {
+        // 시크릿 키를 HMAC SHA 키 객체로 변환
+        this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes());
+    }
+    
+    // Access Token 생성 (사용자 이메일, 권한, 사용자ID 포함)
+    public String generateToken(String email, String role, Integer userId) {
+        JwtBuilder builder = Jwts.builder()
+                .setSubject(email)
+                .claim("role", role);
+        if (userId != null) {
+            builder.claim("userId", userId);
+        }
+        return builder
+                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+    
+    // Refresh Token 생성 (긴 만료기간, 최소한의 정보만 포함)
+    public String generateRefreshToken(String email) {
         return Jwts.builder()
-                   .setSubject(email)
-                   .claim("role", role)
-                   .setIssuedAt(new Date())
-                   .setExpiration(new Date(System.currentTimeMillis()+expiration))
-                   .signWith(key(), SignatureAlgorithm.HS256)
-                   .compact();
+                .setSubject(email)
+                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .compact();
     }
-    public String generateRefreshToken(String email) { return generateToken(email,"REFRESH"); }
-
-    public boolean validate(String token){
-        try { Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token); return true; }
-        catch (JwtException|IllegalArgumentException e){ return false; }
+    
+    // JWT 유효성 검증
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder().setSigningKey(signingKey).build().parseClaimsJws(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
-    public String getEmail(String token){ return parse(token).getSubject(); }
-    public String getRole (String token){ return parse(token).get("role",String.class); }
-
-    private Claims parse(String token){
-        return Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(token).getBody();
+    
+    // JWT에서 클레임 추출
+    public Claims getClaims(String token) {
+        return Jwts.parserBuilder().setSigningKey(signingKey).build()
+                .parseClaimsJws(token).getBody();
     }
 }

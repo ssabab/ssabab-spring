@@ -23,175 +23,140 @@ import java.util.Optional;
 public class AccountController {
     private final AccountService accountService;
     private final AccountRepository accountRepository;
-
+    private final JwtTokenProvider jwtTokenProvider;
+    private final PasswordEncoder passwordEncoder;
     @Value("${jwt.secret}")
-    private String jwtSecret;
+    private String jwtSecret; 
     @Value("${jwt.accessTokenExpiration}")
     private long accessTokenExpiration;
-    @Value("${jwt.refreshTokenExpiration}")
-    private long refreshTokenExpiration;
-
-    // User signup (register). On success, return an access token (and user info)
+    
+    // 회원가입 (새 계정 등록)
     @PostMapping("/save")
-    public ResponseEntity<AuthResponse> register(@RequestBody AccountDTO accountDTO) {
-        Account account = accountService.save(accountDTO);
-        // Generate JWT access & refresh tokens
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-        String accessToken = Jwts.builder()
-                .setSubject(account.getEmail())
-                .claim("userId", account.getUserId())
-                .claim("role", account.getRole())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-        String refreshToken = Jwts.builder()
-                .setSubject(account.getEmail())
-                .claim("userId", account.getUserId())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-        // Store refresh token on server (in DB) and do NOT send it to the client
-        account.setRefreshToken(refreshToken);
-        accountRepository.save(account);
-        // Respond with access token and basic user info
-        AuthResponse response = new AuthResponse(accessToken, account.getEmail(), account.getUsername());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody AccountDTO accountDTO) {
+        try {
+            Account account = accountService.save(accountDTO);
+            // 회원가입 성공 -> JWT 생성하여 반환 (자동 로그인 처리)
+            String accessToken = jwtTokenProvider.generateToken(account.getEmail(), account.getRole(), account.getUserId());
+            String refreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail());
+            // Refresh Token 저장
+            account.setRefreshToken(refreshToken);
+            accountRepository.save(account);
+            // 응답 객체 생성 (액세스 토큰과 사용자 정보 전달)
+            AuthResponse response = new AuthResponse(accessToken, account.getEmail(), account.getUsername());
+            return ResponseEntity.ok(response);
+        } catch (IllegalStateException e) {
+            // 이메일 중복 등으로 인한 회원가입 불가
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        }
     }
 
-    // Local login. On success, return a new access token (refresh token stored server-side)
+    // 로그인 (이메일/비밀번호 인증)
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AccountDTO accountDTO) {
-        Account account = accountService.login(accountDTO);
-        if (account == null) {
-            // Invalid credentials
-            return ResponseEntity.status(401).build();
+        try {
+            Account account = accountService.login(accountDTO);
+            // 로그인 성공 -> JWT 생성
+            String accessToken = jwtTokenProvider.generateToken(account.getEmail(), account.getRole(), account.getUserId());
+            String refreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail());
+            // Refresh Token 저장
+            account.setRefreshToken(refreshToken);
+            accountRepository.save(account);
+            // 응답 반환 (액세스 토큰 + 사용자 이메일/이름)
+            AuthResponse response = new AuthResponse(accessToken, account.getEmail(), account.getUsername());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // 이메일 없음 또는 비밀번호 불일치
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (IllegalStateException e) {
+            // 비활성화 등 기타 로그인 불가 상태
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
-        // Generate JWT access & refresh tokens
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-        String accessToken = Jwts.builder()
-                .setSubject(account.getEmail())
-                .claim("userId", account.getUserId())
-                .claim("role", account.getRole())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-        String refreshToken = Jwts.builder()
-                .setSubject(account.getEmail())
-                .claim("userId", account.getUserId())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-        // Update refresh token in database
-        account.setRefreshToken(refreshToken);
-        accountRepository.save(account);
-        // Return access token and user info (email, username)
-        AuthResponse response = new AuthResponse(accessToken, account.getEmail(), account.getUsername());
-        return ResponseEntity.ok(response);
     }
 
-    // Exchange an expired (or about-to-expire) access token for a new one, using the server-side refresh token
+    // 이메일 중복 체크
+    @GetMapping("/email-check")
+    public ResponseEntity<Boolean> checkEmail(@RequestParam String email) {
+        boolean available = accountRepository.findByEmail(email).isEmpty();
+        return ResponseEntity.ok(available);
+    }
+
+    // 로그아웃 (Refresh Token 무효화)
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        // Authorization 헤더에서 Bearer 토큰 추출
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            // 토큰에서 이메일 추출
+            String email;
+            try {
+                Claims claims = Jwts.parserBuilder()
+                                    .setSigningKey(jwtSecret.getBytes())
+                                    .build()
+                                    .parseClaimsJws(token).getBody();
+                email = claims.getSubject();
+            } catch (ExpiredJwtException ex) {
+                // 만료된 토큰의 경우 예외에서 claims 추출
+                email = ex.getClaims().getSubject();
+            } catch (Exception ex) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+            // 해당 사용자의 Refresh Token 제거 (로그아웃 처리)
+            accountRepository.findByEmail(email).ifPresent(acc -> {
+                acc.setRefreshToken(null);
+                accountRepository.save(acc);
+            });
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    // Access Token 재발급
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshAccessToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         String token = authHeader.substring(7);
         String email;
-        INTGER userId;
         try {
-            // Parse claims (if token is expired, this will throw ExpiredJwtException)
-            var claims = Jwts.parserBuilder().setSigningKey(jwtSecret.getBytes()).build()
-                         .parseClaimsJws(token).getBody();
+            // 만료 여부와 관계없이 일단 파싱 시도
+            Claims claims = Jwts.parserBuilder()
+                                .setSigningKey(jwtSecret.getBytes())
+                                .build()
+                                .parseClaimsJws(token).getBody();
             email = claims.getSubject();
-            userId = claims.get("userId", Integer.class);
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            // Token expired - extract claims from exception
-            email = e.getClaims().getSubject();
-            userId = e.getClaims().get("userId", Integer.class);
-        } catch (Exception e) {
-            // Invalid token
-            return ResponseEntity.status(401).build();
+        } catch (ExpiredJwtException ex) {
+            // 토큰 만료 시 ExpiredJwtException에서 claims 꺼내기
+            email = ex.getClaims().getSubject();
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
-        // Retrieve account and verify stored refresh token
-        Optional<Account> accountOpt = accountRepository.findByEmail(email);
-        if (accountOpt.isEmpty()) {
-            return ResponseEntity.status(401).build();
+        // 계정 및 Refresh Token 확인
+        Account account = accountRepository.findByEmail(email).orElse(null);
+        if (account == null || account.getRefreshToken() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
-        Account account = accountOpt.get();
-        if (account.getRefreshToken() == null) {
-            return ResponseEntity.status(401).build();
-        }
-        // Validate the refresh token from DB
+        // 서버에 저장된 Refresh Token 검증 (유효기간 확인)
         try {
-            Jwts.parserBuilder().setSigningKey(jwtSecret.getBytes())
-                .build().parseClaimsJws(account.getRefreshToken());
-        } catch (Exception e) {
-            // Stored refresh token is invalid or expired
-            return ResponseEntity.status(401).build();
+            Jwts.parserBuilder().setSigningKey(jwtSecret.getBytes()).build().parseClaimsJws(account.getRefreshToken());
+        } catch (Exception ex) {
+            // 저장된 Refresh Token이 만료됨 -> 새 로그인 필요
+            account.setRefreshToken(null);
+            accountRepository.save(account);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
-        // Generate a new access token (do not issue a new refresh token here)
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        // Refresh Token이 유효하면 새로운 Access Token 생성
         String newAccessToken = Jwts.builder()
                 .setSubject(account.getEmail())
                 .claim("userId", account.getUserId())
                 .claim("role", account.getRole())
                 .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
+        // 응답 객체 생성 (새 Access Token + 사용자 정보)
         AuthResponse response = new AuthResponse(newAccessToken, account.getEmail(), account.getUsername());
         return ResponseEntity.ok(response);
-    }
-
-    // List all accounts (protected – consider requiring admin role)
-    @GetMapping("/accounts")
-    public List<AccountDTO> findAllAccounts() {
-        return accountService.findAll();
-    }
-
-    // Get account details by userId
-    @GetMapping("/accounts/{userId}")
-    public ResponseEntity<AccountDTO> getAccountDetail(@PathVariable Integer userId) {
-        AccountDTO accountDTO = accountService.findByUserId(userId);
-        return (accountDTO != null) ? ResponseEntity.ok(accountDTO)
-                                    : ResponseEntity.notFound().build();
-    }
-
-    // Update an account (e.g., profile update)
-    @PutMapping("/accounts/{userId}")
-    public ResponseEntity<Void> updateAccount(@PathVariable Integer userId, @RequestBody AccountDTO accountDTO) {
-        accountDTO.setUserId(userId);
-        accountService.update(accountDTO);
-        return ResponseEntity.ok().build();
-    }
-
-    // User logout: invalidate the refresh token on the server
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String email = null;
-            try {
-                email = Jwts.parserBuilder().setSigningKey(jwtSecret.getBytes())
-                          .build().parseClaimsJws(token).getBody().getSubject();
-            } catch (Exception ignored) {}
-            if (email != null) {
-                accountRepository.findByEmail(email).ifPresent(account -> {
-                    account.setRefreshToken(null);
-                    accountRepository.save(account);
-                });
-            }
-        }
-        return ResponseEntity.ok().build();
-    }
-
-    // Email availability check (for signup form AJAX)
-    @GetMapping("/email-check")
-    public ResponseEntity<String> emailCheck(@RequestParam("email") String email) {
-        String result = accountService.emailCheck(email);
-        // If email is taken, return empty string (or error code), otherwise "ok"
-        return ResponseEntity.ok(result != null ? result : "");
     }
 }
 

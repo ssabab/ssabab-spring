@@ -23,99 +23,88 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
-    private final AccountRepository accountRepository;
-    private final PasswordEncoder passwordEncoder;
+public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+    @Value("${app.oauth2.redirect-uri}")
+    private String redirectUri;  // 소셜 로그인 후 리디렉션할 프론트엔드 URI
 
-    @Value("${app.frontend.redirect-uri}")
-    private String frontendRedirectUri;
-    @Value("${jwt.secret}")
-    private String jwtSecret;
-    @Value("${jwt.accessTokenExpiration}")
-    private long accessTokenExpiration;
-    @Value("${jwt.refreshTokenExpiration}")
-    private long refreshTokenExpiration;
+    private final AccountRepository accountRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
         OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) authentication;
+        String provider = authToken.getAuthorizedClientRegistrationId();  // "google", "github" 등
         OAuth2User oAuth2User = authToken.getPrincipal();
-        String provider = authToken.getAuthorizedClientRegistrationId();  // "google" or "github"
 
-        // Extract user info from the OAuth2User
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
-        String loginName = oAuth2User.getAttribute("login");  // GitHub username
-        String username = (name != null) ? name : (loginName != null ? loginName : "OAuthUser");
-        if (email == null) {
-            // If email is not provided, create a placeholder using provider info
-            String idStr = oAuth2User.getAttribute("id").toString();
-            if ("github".equalsIgnoreCase(provider) && loginName != null) {
-                email = loginName + "@github.com";
-            } else {
-                email = provider + "_" + idStr + "@noemail.com";
+        // 소셜 프로바이더별로 사용자 정보 추출
+        String email = null;
+        String name = null;
+        String avatarUrl = null;
+        if ("google".equals(provider)) {
+            // 구글 기본 OAuth2 프로필
+            email = (String) oAuth2User.getAttributes().get("email");
+            name  = (String) oAuth2User.getAttributes().get("name");
+            avatarUrl = (String) oAuth2User.getAttributes().get("picture");
+        } else if ("github".equals(provider)) {
+            // Kakao의 사용자 정보는 kakao_account와 properties에 중첩되어 있음
+            Map<String, Object> githubAccount = (Map<String, Object>) oAuth2User.getAttributes().get("github_account");
+            Map<String, Object> githubProps   = (Map<String, Object>) oAuth2User.getAttributes().get("properties");
+            if (githubAccount != null) {
+                email = (String) githubAccount.get("email");
             }
-        }
-        // Fetch profile image URL if available
-        String imageUrl = oAuth2User.getAttribute("picture");
-        if (imageUrl == null) {
-            imageUrl = oAuth2User.getAttribute("avatar_url");
-        }
-
-        // Find existing account or create a new one for this social login
-        Optional<Account> accountOpt = accountRepository.findByEmail(email);
-        Account account;
-        if (accountOpt.isPresent()) {
-            account = accountOpt.get();
-            // If this account was a local account, update its provider info (optional)
-            if (account.getProvider() == null || "LOCAL".equals(account.getProvider())) {
-                account.setProvider(provider.toUpperCase());
-                account.setProviderId(oAuth2User.getAttribute("id").toString());
+            if (githubProps != null) {
+                name = (String) githubProps.get("nickname");
+                avatarUrl = (String) githubProps.get("profile_image");
+            }
+            if (email == null) {
+                // 이메일 제공에 동의하지 않은 경우: 카카오 고유 ID를 이용하여 dummy 이메일 생성
+                Object githubId = oAuth2User.getAttributes().get("id");
+                email = "github" + githubId + "@github.com";
+            }
+            if (name == null) {
+                name = "깃헙사용자";  // 이름 정보가 없으면 기본값 설정
             }
         } else {
-            account = new Account();
+            // 기타(provider: kakao 등) 기본 처리
+            email = (String) oAuth2User.getAttributes().get("email");
+            if (email == null) {
+                // GitHub의 경우 public email이 없을 수 있음 -> 로그인 아이디로 이메일 조합
+                String login = (String) oAuth2User.getAttributes().get("login");
+                email = login + "@github.com";
+            }
+            name = (String) oAuth2User.getAttributes().getOrDefault("name", oAuth2User.getAttributes().get("login"));
+            avatarUrl = (String) oAuth2User.getAttributes().get("avatar_url");
+        }
+
+        // Account 조회 또는 신규 생성
+        Account account = accountRepository.findByEmail(email).orElseGet(Account::new);
+        boolean isNewAccount = (account.getUserId() == null);
+        if (isNewAccount) {
+            // 신규 회원인 경우 Account 초기화
             account.setEmail(email);
-            account.setUsername(username);
-            account.setProvider(provider.toUpperCase());
-            account.setProviderId(oAuth2User.getAttribute("id").toString());
-            // Set a random password (not used for OAuth2 logins)
+            // 소셜 계정이므로 임시 비밀번호 발급 (bcrypt 해시 저장)
             String randomPwd = UUID.randomUUID().toString();
             account.setPassword(passwordEncoder.encode(randomPwd));
-            account.setRole("USER");
+            account.setRole("ROLE_USER");
             account.setActive(true);
         }
-        if (imageUrl != null) {
-            account.setProfileImgUrl(imageUrl);
-        }
-        // Save the account (this will insert new or update existing)
-        account = accountRepository.save(account);
+        // 소셜 로그인 시마다 최신 프로필 정보로 업데이트
+        account.setUsername(name);
+        account.setProvider(provider);
+        account.setProviderId(String.valueOf(oAuth2User.getAttribute("id")));
+        account.setProfileImgUrl(avatarUrl);
 
-        // Generate JWT access token and refresh token
-        Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-        String accessToken = Jwts.builder()
-                .setSubject(account.getEmail())
-                .claim("userId", account.getUserId())
-                .claim("role", account.getRole())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-        String refreshToken = Jwts.builder()
-                .setSubject(account.getEmail())
-                .claim("userId", account.getUserId())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-        // Store refresh token in the account (server side)
+        // JWT 토큰 생성 (Access/Refresh) 및 Account 갱신
+        String accessToken = jwtTokenProvider.generateToken(account.getEmail(), account.getRole(), account.getUserId());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(account.getEmail());
         account.setRefreshToken(refreshToken);
         accountRepository.save(account);
 
-        // Redirect to the frontend application with the access token as a URL parameter
-        String redirectUrl = frontendRedirectUri;
-        if (!redirectUrl.endsWith("/")) {
-            redirectUrl += "/";
-        }
-        redirectUrl += "?token=" + accessToken;
-        response.sendRedirect(redirectUrl);
+        // 프론트엔드로 리디렉션 (Access Token 전달, Refresh Token은 전달하지 않음)
+        String redirectTarget = redirectUri + "?accessToken=" + accessToken;
+        response.sendRedirect(redirectTarget);
     }
 }
+

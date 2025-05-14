@@ -16,73 +16,57 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Sign up a new account with hashed password
-    public Account save(AccountDTO accountDTO) {
-        // Map DTO to Entity and hash the password
-        Account account = Account.builder()
-                .email(accountDTO.getEmail())
-                .username(accountDTO.getUsername())
-                .password(passwordEncoder.encode(accountDTO.getPassword()))
-                .role("USER")
-                .provider("LOCAL")
-                .providerId(null)
-                .profileImgUrl(null)
-                .active(true)
-                .build();
-        return accountRepository.save(account);
-    }
-
-    // Local login: validate credentials and return Account if successful
-    public Account login(AccountDTO accountDTO) {
-        Optional<Account> accountOpt = accountRepository.findByEmail(accountDTO.getEmail());
-        if (accountOpt.isPresent()) {
-            Account account = accountOpt.get();
-            // Check password hash match (only for LOCAL accounts)
-            if (account.getPassword() != null 
-                    && passwordEncoder.matches(accountDTO.getPassword(), account.getPassword())) {
-                return account;
-            }
+    /**
+     * 새로운 Account 생성 (회원가입 처리)
+     * @throws IllegalStateException 이메일이 중복된 경우
+     */
+    public Account save(AccountDTO dto) {
+        // 이메일 중복 체크
+        if (accountRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalStateException("이미 사용중인 이메일입니다.");
         }
-        return null;
+        // Account 엔티티 생성 및 필드 설정
+        Account account = new Account();
+        account.setEmail(dto.getEmail());
+        account.setUsername(dto.getUsername());
+        // 비밀번호 해싱 저장
+        account.setPassword(passwordEncoder.encode(dto.getPassword()));
+        account.setRole("ROLE_USER");
+        account.setActive(true);
+        // (소셜 로그인 아닌 로컬 가입이므로 provider 정보는 null 그대로 둠)
+        accountRepository.save(account);
+        return account;
     }
 
-    // Retrieve all accounts (for admin or debugging purposes)
-    public List<AccountDTO> findAll() {
-        List<Account> accounts = accountRepository.findAll();
-        List<AccountDTO> dtoList = new ArrayList<>();
-        for (Account account : accounts) {
-            dtoList.add(AccountDTO.toAccountDTO(account));
+    /**
+     * 로그인 처리 (이메일/비밀번호 검증)
+     * @return 인증 성공한 Account (실패 시 예외 발생)
+     * @throws IllegalArgumentException 이메일 없음 또는 비밀번호 불일치
+     */
+    public Account login(AccountDTO dto) {
+        Account account = accountRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(dto.getPassword(), account.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
-        return dtoList;
-    }
-
-    // Find account by userId
-    public AccountDTO findByUserId(INTGER userId) {
-        Optional<Account> accountOpt = accountRepository.findByUserId(userId);
-        return accountOpt.map(AccountDTO::toAccountDTO).orElse(null);
-    }
-
-    // Update account profile (username or password)
-    public void update(AccountDTO accountDTO) {
-        Optional<Account> accountOpt = accountRepository.findById(accountDTO.getUserId());
-        if (accountOpt.isPresent()) {
-            Account account = accountOpt.get();
-            if (accountDTO.getUsername() != null) {
-                account.setUsername(accountDTO.getUsername());
-            }
-            if (accountDTO.getPassword() != null && !accountDTO.getPassword().isEmpty()) {
-                account.setPassword(passwordEncoder.encode(accountDTO.getPassword()));
-            }
-            accountRepository.save(account);
+        if (!account.isActive()) {
+            throw new IllegalStateException("비활성화된 계정입니다.");
         }
+        return account;
     }
 
-    // Check if an email is already in use (returns "ok" if available, otherwise null)
-    public String emailCheck(String email) {
-        boolean exists = accountRepository.findByEmail(email).isPresent();
-        return exists ? null : "ok";
+    /**
+     * Account의 Refresh Token 값 업데이트 (로그인/로그아웃 등에서 사용)
+     */
+    public void updateRefreshToken(Integer userId, String refreshToken) {
+        accountRepository.findById(userId).ifPresent(acc -> {
+            acc.setRefreshToken(refreshToken);
+            accountRepository.save(acc);
+        });
     }
 }
+
 
 
 
