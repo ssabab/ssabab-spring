@@ -1,39 +1,66 @@
 package ssabab.back.config;
 
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import lombok.RequiredArgsConstructor;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collections;
+import java.security.Key;
+import java.util.ArrayList;
+import java.util.List;
 
-@Component
-@RequiredArgsConstructor
+/**
+ * Filter to authenticate requests via JWT tokens.
+ */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private final Key signingKey;
 
-    private final JwtTokenProvider jwtProvider;
+    public JwtAuthenticationFilter(String secret) {
+        // Initialize the signing key for HMAC using the JWT secret
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes());
+    }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
-                                    FilterChain chain) throws ServletException, IOException {
-        String h = req.getHeader("Authorization");
-        if (h!=null && h.startsWith("Bearer ")) {
-            String token = h.substring(7);
-            if (jwtProvider.validate(token)) {
-                String email = jwtProvider.getEmail(token);
-                String role  = jwtProvider.getRole(token);
-                var auth = new UsernamePasswordAuthenticationToken(
-                        email, null,
-                        Collections.singletonList(new SimpleGrantedAuthority(role)));
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
+                                    FilterChain filterChain) throws ServletException, IOException {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            // No JWT provided, continue without setting authentication
+            filterChain.doFilter(request, response);
+            return;
         }
-        chain.doFilter(req,res);
+        String token = authorizationHeader.substring(7);
+        try {
+            // Validate and parse token
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(signingKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            // Extract user identity and role from token claims
+            String email = claims.getSubject();
+            String role = claims.get("role", String.class);
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+            if (role != null) {
+                // Prefix role with "ROLE_" for Spring Security authorities
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+            }
+            // Create Authentication and set in security context
+            Authentication auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        } catch (Exception e) {
+            // Invalid or expired token – authentication remains null
+            SecurityContextHolder.clearContext();
+        }
+        // Proceed with the next filter
+        filterChain.doFilter(request, response);
     }
 }

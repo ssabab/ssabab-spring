@@ -10,38 +10,89 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "account")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter  // Added to allow updating fields (password, refreshToken, etc.)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Account {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private INTGER userId;
 
-    /* ---------- PK 타입 Long 으로 통일 ---------- */
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer userId;
+    @Column(nullable = false)
+    private String password;
 
-    @Column(nullable = false, unique = true) private String email;
-    @Column(nullable = false)               private String password;
-    @Column(nullable = false)               private String username;
+    @Column
+    private String provider;  // e.g. "LOCAL", "GOOGLE", "GITHUB"
 
-    // 소셜 확장용
-    private String provider;
+    @Column(name = "provider_id")
     private String providerId;
 
-    private String profileImgUrl = "default";
-    private String role          = "USER";
-    private String refreshToken;
-    private Boolean active       = true;
+    @Column(nullable = false)
+    private String username;
 
-    @CreationTimestamp @Column(updatable = false)
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "profile_image_url")
+    private String profileImgUrl;
+
+    @Column
+    private String role;
+
+    @Column(name = "refresh_token")
+    private String refreshToken;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    /* ---------- DTO → Entity ---------- */
-    public static Account fromDTO(AccountDTO dto) {
-        return Account.builder()
-                .email(dto.getEmail())
-                .password(dto.getPassword())
-                .username(dto.getUsername())
-                .build();
-    }
+    @Column
+    private Boolean active;
 }
+
+
+
+
+// @Entity
+// @Table(name = "account")
+// @Getter @Setter
+// @NoArgsConstructor @AllArgsConstructor @Builder
+// public class Account {
+
+//     /* ---------- PK 타입 Long 으로 통일 ---------- */
+//     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+//     private Integer userId;
+
+//     @Column(nullable = false, unique = true) private String email;
+//     @Column(nullable = false)               private String password;
+//     @Column(nullable = false)               private String username;
+
+//     // 소셜 확장용
+//     private String provider;
+//     private String providerId;
+
+//     private String profileImgUrl = "default";
+//     private String role          = "USER";
+//     private String refreshToken;
+//     private Boolean active       = true;
+
+//     @CreationTimestamp @Column(updatable = false)
+//     private LocalDateTime createdAt;
+//     @UpdateTimestamp
+//     private LocalDateTime updatedAt;
+
+//     /* ---------- DTO → Entity ---------- */
+//     public static Account fromDTO(AccountDTO dto) {
+//         return Account.builder()
+//                 .email(dto.getEmail())
+//                 .password(dto.getPassword())
+//                 .username(dto.getUsername())
+//                 .build();
+//     }
+// }
