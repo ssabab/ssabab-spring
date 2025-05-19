@@ -3,6 +3,7 @@ package ssabab.back.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ssabab.back.dto.AccountDTO;
+import ssabab.back.dto.LoginDTO;
 import ssabab.back.entity.Account;
 import ssabab.back.repository.AccountRepository;
 
@@ -18,14 +19,42 @@ public class AccountService {
 
     /* 회원가입 */
     public void save(AccountDTO dto) {
-        if (accountRepo.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("이미 등록된 이메일입니다.");
+        try {
+            if (accountRepo.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("이미 등록된 이메일입니다.");
+            }
+            
+            // 필수 필드 검증
+            if (dto.getOrdNum() == null) {
+                throw new IllegalArgumentException("SSAFY 기수는 필수 입력 항목입니다.");
+            }
+            if (dto.getClassNum() == null) {
+                throw new IllegalArgumentException("반 번호는 필수 입력 항목입니다.");
+            }
+            if (dto.getSsafyRegion() == null || dto.getSsafyRegion().isEmpty()) {
+                throw new IllegalArgumentException("SSAFY 지역은 필수 입력 항목입니다.");
+            }
+            if (dto.getGender() == null) {
+                throw new IllegalArgumentException("성별은 필수 입력 항목입니다.");
+            }
+            if (dto.getBirthYear() == null) {
+                throw new IllegalArgumentException("출생년도는 필수 입력 항목입니다.");
+            }
+            
+            // role은 항상 "0"으로 설정
+            dto.setRole("0");
+            
+            Account account = Account.fromDTO(dto);
+            accountRepo.save(account);
+        } catch (Exception e) {
+            System.out.println("회원가입 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        accountRepo.save(Account.fromDTO(dto));
     }
 
     /* 로그인 (성공 시 DTO 반환, 실패 시 null) */
-    public AccountDTO login(AccountDTO dto) {
+    public AccountDTO login(LoginDTO dto) {
         Optional<Account> opt = accountRepo.findByEmail(dto.getEmail());
         if (opt.isPresent() && opt.get().getPassword().equals(dto.getPassword())) {
             return AccountDTO.fromEntity(opt.get());
@@ -41,7 +70,7 @@ public class AccountService {
     }
 
     /* PK 조회 */
-    public AccountDTO findByuserId(Integer id) {
+    public AccountDTO findById(Integer id) {
         return accountRepo.findById(id).map(AccountDTO::fromEntity).orElse(null);
     }
 

@@ -11,17 +11,17 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Friend {
+public class PreVote {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer preVoteId;
+
+    @ManyToOne
+    @JoinColumn(name = "menu_id")
+    private Menu menu;
 
     @ManyToOne
     @JoinColumn(name = "userId")
-    private Account user;
-
-    @ManyToOne
-    @JoinColumn(name = "friend_id")
-    private Account friend;
+    private Account account;
 }

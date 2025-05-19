@@ -1,0 +1,300 @@
+{
+    "menu": {
+        "A": {
+            "foods": [
+                {
+                    "foodName": "열무보리비빔밥",
+                    "mainSub": "주메뉴",
+                    "category": "한식",
+                    "tag": "밥",
+                    "rating": 3.3
+                },
+                {
+                    "foodName": "팽이버섯된장국",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "국물",
+                    "rating": 2.2
+                },
+                {
+                    "foodName": "단호박조림",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "반찬",
+                    "rating": 2.2
+                },
+                {
+                    "foodName": "콘샐러드",
+                    "mainSub": "서브메뉴",
+                    "category": "양식",
+                    "tag": "샐러드",
+                    "rating": 1.6
+                },
+                {
+                    "foodName": "콩자반",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "반찬",
+                    "rating": 2.4
+                },
+                {
+                    "foodName": "포기김치",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "야채",
+                    "rating": 3.5
+                }
+            ]
+        },
+        "B": {
+            "foods": [
+                {
+                    "foodName": "카레라이스",
+                    "mainSub": "주메뉴",
+                    "category": "퓨전",
+                    "tag": "밥",
+                    "rating": 0.0
+                },
+                {
+                    "foodName": "팽이버섯된장국",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "국물",
+                    "rating": 2.2
+                },
+                {
+                    "foodName": "단호박조림",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "반찬",
+                    "rating": 2.2
+                },
+                {
+                    "foodName": "콘샐러드",
+                    "mainSub": "서브메뉴",
+                    "category": "양식",
+                    "tag": "샐러드",
+                    "rating": 1.6
+                },
+                {
+                    "foodName": "마늘종햄볶음",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "반찬",
+                    "rating": 0.0
+                },
+                {
+                    "foodName": "깍두기",
+                    "mainSub": "서브메뉴",
+                    "category": "한식",
+                    "tag": "야채",
+                    "rating": 3.2
+                }
+            ]
+        }
+    },
+    "voteResult": {
+        "countA": 60,
+        "countB": 40
+    },
+    "actualSelectionResult": {
+        "countA": 45,
+        "countB": 55
+    },
+    "generation": {
+        "12": {
+            "countA": 20,
+            "countB": 80,
+            "0": {
+                "countA": 10,
+                "countB": 0
+            },
+            "1": {
+                "countA": 7,
+                "countB": 3
+            },
+            "2": {
+                "countA": 9,
+                "countB": 1
+            }
+        },
+        "13": {
+            "countA": 30,
+            "countB": 70,
+            "0": {
+                "countA": 0,
+                "countB": 0
+            },
+            "1": {
+                "countA": 10,
+                "countB": 0
+            },
+            "2": {
+                "countA": 5,
+                "countB": 5
+            },
+            "3": {
+                "countA": 0,
+                "countB": 10
+            },
+            "4": {
+                "countA": 0,
+                "countB": 10
+            },
+            "5": {
+                "countA": 0,
+                "countB": 10
+            },
+            "6": {
+                "countA": 0,
+                "countB": 5
+            }
+        }
+    },
+    "gender": {
+        "0": {
+            "countA": 50,
+            "countB": 50
+        },
+        "1": {
+            "countA": 70,
+            "countB": 30
+        }
+    },
+    "age": {
+        "95": {
+            "countA": 20,
+            "countB": 80
+        },
+        "96": {
+            "countA": 30,
+            "countB": 70
+        },
+        "97": {
+            "countA": 40,
+            "countB": 60
+        },
+        "98": {
+            "countA": 50,
+            "countB": 50
+        },
+        "99": {
+            "countA": 60,
+            "countB": 40
+        },
+        "00": {
+            "countA": 70,
+            "countB": 30
+        },
+        "01": {
+            "countA": 80,
+            "countB": 20
+        },
+        "02": {
+            "countA": 90,
+            "countB": 10
+        }
+    },
+    "keyword": [
+        {
+            "word": "맛있다",
+            "count": 46
+        },
+        {
+            "word": "맵다",
+            "count": 39
+        },
+        {
+            "word": "질겼다",
+            "count": 30
+        },
+        {
+            "word": "짜다",
+            "count": 28
+        },
+        {
+            "word": "싱겁다",
+            "count": 25
+        },
+        {
+            "word": "고소하다",
+            "count": 22
+        },
+        {
+            "word": "바삭하다",
+            "count": 20
+        },
+        {
+            "word": "달다",
+            "count": 18
+        },
+        {
+            "word": "느끼하다",
+            "count": 17
+        },
+        {
+            "word": "딱딱하다",
+            "count": 15
+        },
+        {
+            "word": "부드럽다",
+            "count": 13
+        },
+        {
+            "word": "비리다",
+            "count": 11
+        },
+        {
+            "word": "뜨겁다",
+            "count": 10
+        },
+        {
+            "word": "차갑다",
+            "count": 9
+        },
+        {
+            "word": "눅눅하다",
+            "count": 8
+        },
+        {
+            "word": "기름지다",
+            "count": 7
+        },
+        {
+            "word": "느끼하지 않다",
+            "count": 6
+        },
+        {
+            "word": "퍽퍽하다",
+            "count": 6
+        },
+        {
+            "word": "질지 않다",
+            "count": 5
+        },
+        {
+            "word": "향긋하다",
+            "count": 5
+        },
+        {
+            "word": "텁텁하다",
+            "count": 4
+        },
+        {
+            "word": "쫀득하다",
+            "count": 4
+        },
+        {
+            "word": "덜익었다",
+            "count": 3
+        },
+        {
+            "word": "불맛난다",
+            "count": 3
+        },
+        {
+            "word": "잡내난다",
+            "count": 2
+        }
+    ]
+}

@@ -1,0 +1,109 @@
+{
+    "userAverageRating": 1.8,
+    "globalAverageRating": 3.8,
+    "tagDistribution": [
+        {
+            "category": "국적",
+            "tags": [
+                {
+                    "tag": "한식",
+                    "percentage": 60
+                },
+                {
+                    "tag": "중식",
+                    "percentage": 20
+                },
+                {
+                    "tag": "일식",
+                    "percentage": 10
+                },
+                {
+                    "tag": "양식",
+                    "percentage": 10
+                }
+            ]
+        },
+        {
+            "category": "주식",
+            "tags": [
+                {
+                    "tag": "밥",
+                    "percentage": 75
+                },
+                {
+                    "tag": "빵",
+                    "percentage": 15
+                },
+                {
+                    "tag": "면",
+                    "percentage": 10
+                }
+            ]
+        },
+        {
+            "category": "주재료",
+            "tags": [
+                {
+                    "tag": "고기",
+                    "percentage": 40
+                },
+                {
+                    "tag": "야채",
+                    "percentage": 35
+                },
+                {
+                    "tag": "해산물",
+                    "percentage": 15
+                },
+                {
+                    "tag": "기타",
+                    "percentage": 10
+                }
+            ]
+        }
+    ],
+    "bestMenus": [
+        {
+            "menuName": "맛있는 음식1",
+            "userRating": 5.0
+        },
+        {
+            "menuName": "맛있는 음식2",
+            "userRating": 4.9
+        },
+        {
+            "menuName": "맛있는 음식3",
+            "userRating": 4.8
+        },
+        {
+            "menuName": "맛있는 음식4",
+            "userRating": 4.7
+        },
+        {
+            "menuName": "맛있는 음식5",
+            "userRating": 4.6
+        }
+    ],
+    "worstMenus": [
+        {
+            "menuName": "맛없는 음식1",
+            "userRating": 0.0
+        },
+        {
+            "menuName": "맛없는 음식2",
+            "userRating": 0.1
+        },
+        {
+            "menuName": "맛없는 음식3",
+            "userRating": 0.2
+        },
+        {
+            "menuName": "맛없는 음식4",
+            "userRating": 0.3
+        },
+        {
+            "menuName": "맛없는 음식5",
+            "userRating": 0.4
+        }
+    ]
+}

@@ -1,0 +1,66 @@
+{
+    "12": {
+        "total": 124,
+        "class": {
+            "0": 0,
+            "1": 32,
+            "2": 32
+        }
+    },
+    "13": {
+        "total": 265,
+        "class": {
+            "0": 0,
+            "1": 41,
+            "2": 35,
+            "3": 25,
+            "4": 25,
+            "5": 25,
+            "6": 25
+        }
+    },
+    "bestMenus": [
+        {
+            "menuName": "맛있는 음식1",
+            "averageRating": 5.0
+        },
+        {
+            "menuName": "맛있는 음식2",
+            "averageRating": 4.9
+        },
+        {
+            "menuName": "맛있는 음식3",
+            "averageRating": 4.8
+        },
+        {
+            "menuName": "맛있는 음식4",
+            "averageRating": 4.7
+        },
+        {
+            "menuName": "맛있는 음식5",
+            "averageRating": 4.6
+        }
+    ],
+    "worstMenus": [
+        {
+            "menuName": "맛없는 음식1",
+            "averageRating": 0.0
+        },
+        {
+            "menuName": "맛없는 음식2",
+            "averageRating": 0.1
+        },
+        {
+            "menuName": "맛없는 음식3",
+            "averageRating": 0.2
+        },
+        {
+            "menuName": "맛없는 음식4",
+            "averageRating": 0.3
+        },
+        {
+            "menuName": "맛없는 음식5",
+            "averageRating": 0.4
+        }
+    ]
+}

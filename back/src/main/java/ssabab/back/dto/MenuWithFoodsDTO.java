@@ -7,4 +7,5 @@ import java.util.List;
 public class MenuWithFoodsDTO {
     private Integer menuId;
     private List<FoodDTO> foods;
+    private java.time.LocalDate date;
 }

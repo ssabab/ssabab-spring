@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ssabab.back.dto.AccountDTO;
+import ssabab.back.dto.LoginDTO;
 import ssabab.back.service.AccountService;
 
 import java.util.List;
@@ -36,11 +37,11 @@ public class AccountController {
 
     /* ---------- 로그인 ---------- */
     @PostMapping(value = "/login", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> login(@RequestBody AccountDTO dto, HttpSession session) {
+    public ResponseEntity<?> login(@RequestBody LoginDTO dto, HttpSession session) {
         AccountDTO user = accountService.login(dto);
         if (user != null) {
             session.setAttribute("loginEmail", user.getEmail());       // 세션 유지
-            return ResponseEntity.ok(Map.of("userId", user.getUserId())); // ← user_id만 반환
+            return ResponseEntity.ok(Map.of("userId", user.getId())); // userId 키로 반환
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "LOGIN_FAIL"));
@@ -60,9 +61,9 @@ public class AccountController {
     }
 
     /* ---------- 단일 회원 조회 ---------- */
-    @GetMapping(value = "/{userId}", produces = "application/json")
-    public ResponseEntity<?> findById(@PathVariable Integer userId) {
-        AccountDTO dto = accountService.findByuserId(userId);
+    @GetMapping(value = "/{id}", produces = "application/json")
+    public ResponseEntity<?> findById(@PathVariable Integer id) {
+        AccountDTO dto = accountService.findById(id);
         return dto != null ? ResponseEntity.ok(dto)
                 : ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", "NOT_FOUND"));

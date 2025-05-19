@@ -25,10 +25,11 @@ public class ReviewService {
         Account user = accountRepository.findById(userId).orElseThrow();
         Menu menu = menuRepository.findById(menuId).orElseThrow();
 
-        List<FoodReview> reviews = foodReviewRepository.findByAccountAndFoodIn(user, menu.getFoods());
+        List<Food> menuFoods = menu.getMenuFoods().stream().map(MenuFood::getFood).collect(Collectors.toList());
+        List<FoodReview> reviews = foodReviewRepository.findByAccountAndFoodIn(user, menuFoods);
 
         return FoodReviewRequestDTO.builder()
-                .foods(menu.getFoods().stream()
+                .foods(menuFoods.stream()
                         .map(food -> {
                             Integer score = reviews.stream()
                                     .filter(r -> r.getFood().getFoodId().equals(food.getFoodId()))
@@ -49,7 +50,7 @@ public class ReviewService {
         Account user = accountRepository.findById(userId).orElseThrow();
         Menu menu = menuRepository.findById(menuId).orElseThrow();
 
-        List<Food> foods = menu.getFoods();
+        List<Food> foods = menu.getMenuFoods().stream().map(MenuFood::getFood).collect(Collectors.toList());
         if (isUpdate) {
             foodReviewRepository.deleteByAccountAndFoodIn(user, foods);
         }
@@ -69,6 +70,7 @@ public class ReviewService {
     public void deleteFoodReviews(Integer userId, Integer menuId) {
         Account user = accountRepository.findById(userId).orElseThrow();
         Menu menu = menuRepository.findById(menuId).orElseThrow();
-        foodReviewRepository.deleteByAccountAndFoodIn(user, menu.getFoods());
+        List<Food> foods = menu.getMenuFoods().stream().map(MenuFood::getFood).collect(Collectors.toList());
+        foodReviewRepository.deleteByAccountAndFoodIn(user, foods);
     }
 }

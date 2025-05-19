@@ -14,14 +14,14 @@ public class ReviewController {
 
     @GetMapping("/{menuId}")
     public ResponseEntity<FoodReviewRequestDTO> getReviews(
-            @RequestHeader("user_id") Integer userId,
+            @RequestHeader("userId") Integer userId,
             @PathVariable Integer menuId) {
         return ResponseEntity.ok(reviewService.getFoodReviews(userId, menuId));
     }
 
     @PostMapping("/{menuId}")
     public ResponseEntity<Void> createReviews(
-            @RequestHeader("user_id") Integer userId,
+            @RequestHeader("userId") Integer userId,
             @PathVariable Integer menuId,
             @RequestBody FoodReviewRequestDTO dto) {
         reviewService.createOrUpdateFoodReviews(userId, menuId, dto, false);
@@ -30,7 +30,7 @@ public class ReviewController {
 
     @PutMapping("/{menuId}")
     public ResponseEntity<Void> updateReviews(
-            @RequestHeader("user_id") Integer userId,
+            @RequestHeader("userId") Integer userId,
             @PathVariable Integer menuId,
             @RequestBody FoodReviewRequestDTO dto) {
         reviewService.createOrUpdateFoodReviews(userId, menuId, dto, true);
@@ -39,7 +39,7 @@ public class ReviewController {
 
     @DeleteMapping("/{menuId}")
     public ResponseEntity<Void> deleteReviews(
-            @RequestHeader("user_id") Integer userId,
+            @RequestHeader("userId") Integer userId,
             @PathVariable Integer menuId) {
         reviewService.deleteFoodReviews(userId, menuId);
         return ResponseEntity.ok().build();
