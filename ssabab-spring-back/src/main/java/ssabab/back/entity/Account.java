@@ -1,13 +1,12 @@
 package ssabab.back.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.time.LocalDate;
-
-import lombok.Builder;
-import lombok.AllArgsConstructor;
+import java.time.LocalDate; // LocalDate 임포트
 
 /**
  * 회원 계정 엔티티 - 소셜 로그인 계정 및 추가 프로필 정보를 저장
@@ -51,7 +50,6 @@ public class Account {
     @Column(name = "role", length = 20)
     private String role;             // 권한(Role) - 예: "USER"
 
-
     @Column(name = "refresh_token",length = 2048)
     private String refreshToken;    // (선택) OAuth2 Refresh Token 저장용
 
@@ -70,6 +68,6 @@ public class Account {
     @Column(name = "gender", length = 10)
     private String gender;           // 성별
 
-    @Column(name = "birth_date")
+    @Column(name = "birth_date") // age 대신 birth_date로 변경
     private LocalDate birthDate;             // 태어난 연도(나이와 관계된 값)
 }

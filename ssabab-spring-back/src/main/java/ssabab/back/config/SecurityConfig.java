@@ -56,11 +56,11 @@ public class SecurityConfig {
                         "/account/login",       // 로그인 페이지 경로 모두 허용
                         "/oauth2/**",           // OAuth2 인증 관련 경로 허용 (리디렉션 URI 등)
                         "/error",               // 에러 페이지 모두 허용
-                        "/api/menu/**",          // 메뉴 조회 경로 허용 (로그인 X 케이스)
+                        "/api/menu/**",         // 메뉴 조회 경로 허용
                         "/",                    // 메인 페이지 (로그인 X 케이스)
-                        "/analysis/**"          // 분석 페이지 (로그인 X 케이스)
+                        "/api/dashboard/monthly/**" // 월간 분석 (로그인 X 케이스도 허용)
                 ).permitAll()
-                .anyRequest().authenticated()  // 그 외 나머지 요청은 인증 필요
+                .anyRequest().authenticated()  // 그 외 나머지 요청은 인증 필요 (개인 분석 포함)
         );
 
         // OAuth2 로그인 설정
@@ -138,7 +138,7 @@ public class SecurityConfig {
                 String accessToken = jwtTokenProvider.createAccessToken(jwtAuth);
                 String refreshToken = jwtTokenProvider.createRefreshToken(jwtAuth);
 
-                // Refresh Token 저장 (필요하다면 Account 엔티티에 필드를 추가하고 저장)
+                // Refresh Token 저장
                 existingAccount.setRefreshToken(refreshToken);
                 accountRepository.save(existingAccount);
 
