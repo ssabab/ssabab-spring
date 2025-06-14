@@ -1,6 +1,7 @@
 package ssabab.back.dto;
 
 import lombok.Data;
+import java.time.LocalDate;
 
 /**
  * 회원가입 요청 DTO (추가 정보 입력용)
@@ -12,5 +13,5 @@ public class SignupRequestDTO {
     private String classNum;
     private String ssafyRegion;
     private String gender;
-    private Integer age;
+    private LocalDate birthDate;
 }

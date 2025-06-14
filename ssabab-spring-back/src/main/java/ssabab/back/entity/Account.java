@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import lombok.Builder;
 import lombok.AllArgsConstructor;
@@ -69,6 +70,6 @@ public class Account {
     @Column(name = "gender", length = 10)
     private String gender;           // 성별
 
-    @Column(name = "age")
-    private Integer age;             // 태어난 연도(나이와 관계된 값)
+    @Column(name = "birth_date")
+    private LocalDate birthDate;             // 태어난 연도(나이와 관계된 값)
 }
