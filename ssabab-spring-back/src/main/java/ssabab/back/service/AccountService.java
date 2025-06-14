@@ -43,7 +43,7 @@ public class AccountService {
                 .classNum(signupData.getClassNum())
                 .ssafyRegion(signupData.getSsafyRegion())
                 .gender(signupData.getGender())
-                .age(signupData.getAge())
+                .birthDate(signupData.getBirthDate())
                 .active(true)
                 .role("USER") // 기본 역할
                 .createdAt(LocalDateTime.now())
@@ -69,7 +69,7 @@ public class AccountService {
         dto.setClassNum(account.getClassNum());
         dto.setSsafyRegion(account.getSsafyRegion());
         dto.setGender(account.getGender());
-        dto.setAge(account.getAge());
+        dto.setBirthDate(account.getBirthDate());
         return dto;
     }
 
@@ -93,7 +93,7 @@ public class AccountService {
         if (updateData.getClassNum() != null) account.setClassNum(updateData.getClassNum());
         if (updateData.getSsafyRegion() != null) account.setSsafyRegion(updateData.getSsafyRegion());
         if (updateData.getGender() != null) account.setGender(updateData.getGender());
-        if (updateData.getAge() != null) account.setAge(updateData.getAge());
+        if (updateData.getBirthDate() != null) account.setBirthDate(updateData.getBirthDate());
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
         return getProfile(account);

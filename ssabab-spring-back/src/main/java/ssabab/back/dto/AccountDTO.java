@@ -1,6 +1,7 @@
 package ssabab.back.dto;
 
 import lombok.Data;
+import java.time.LocalDate;
 
 /**
  * 회원 프로필 정보 DTO (응답용)
@@ -14,6 +15,6 @@ public class AccountDTO {
     private String classNum;
     private String ssafyRegion;
     private String gender;
-    private Integer age;
+    private LocalDate birthDate;
 }
 

@@ -64,7 +64,7 @@ public class FriendService {
             dto.setClassNum(friendAccount.getClassNum());
             dto.setSsafyRegion(friendAccount.getSsafyRegion());
             dto.setGender(friendAccount.getGender());
-            dto.setAge(friendAccount.getAge());
+            dto.setBirthDate(friendAccount.getBirthDate());
             return dto;
         }).collect(Collectors.toList());
     }
