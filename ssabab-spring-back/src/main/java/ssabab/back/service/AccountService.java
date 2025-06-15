@@ -49,7 +49,6 @@ public class AccountService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .profileImageUrl(profileImageUrl)
-                .password(null) // 소셜 로그인 사용자이므로 비밀번호는 null
                 .build();
 
         // 계정 저장

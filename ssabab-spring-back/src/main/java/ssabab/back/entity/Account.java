@@ -23,9 +23,6 @@ public class Account {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(length = 255)
-    private String password;         // 비밀번호 (소셜 로그인 사용 시 null 처리)
-
     @Column(name = "provider", length = 20)
     private String provider;         // 소셜 로그인 제공자 (예: "google")
 
