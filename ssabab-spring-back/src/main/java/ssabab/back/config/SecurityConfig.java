@@ -2,7 +2,9 @@ package ssabab.back.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -22,21 +24,22 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
-import ssabab.back.dto.TokenDTO;
+import ssabab.back.dto.TokenDTO; // 이제 TokenDTO는 응답 본문에 직접 쓰이지 않으므로, import는 불필요할 수 있음
 import ssabab.back.entity.Account;
 import ssabab.back.jwt.JwtAuthenticationFilter;
 import ssabab.back.jwt.JwtTokenProvider;
 import ssabab.back.repository.AccountRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper; // 이제 ObjectMapper는 사용되지 않음
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Optional;
-import java.net.URLEncoder; // URL 인코딩을 위해 추가
-import java.nio.charset.StandardCharsets; // StandardCharsets 추가
-import org.springframework.web.cors.CorsConfiguration; // CorsConfiguration 추가
-import org.springframework.web.cors.CorsConfigurationSource; // CorsConfigurationSource 추가
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // UrlBasedCorsConfigurationSource 추가
-import java.util.Arrays; // Arrays 추가
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -48,44 +51,43 @@ public class SecurityConfig {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Value("${jwt.refresh-token-expiry}")
+    private long refreshTokenExpirySeconds;
+
+    private static final String FRONTEND_APP_BASE_URL = "http://localhost:3000"; // 앱의 기본 경로
+    private static final String FRONTEND_SIGNUP_BASE_URL = "http://localhost:3000"; // 회원가입 페이지 기본 경로
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable());
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
-        // 세션 비활성화 (JWT 사용)
         http.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // 요청 경로별 보안 설정
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                        "/account/signup",      // 회원가입 경로는 모두 허용
-                        "/account/login",       // 로그인 페이지 경로 모두 허용
-                        "/oauth2/**",           // OAuth2 인증 관련 경로 허용 (리디렉션 URI 등)
-                        "/error",               // 에러 페이지 모두 허용
-                        "/api/menu/**",         // 메뉴 조회 경로 허용
-                        "/",                    // 메인 페이지 (로그인 X 케이스)
-                        "/api/dashboard/monthly/**", // 월간 분석 (로그인 X 케이스도 허용)
-                        "/account/refresh"      // 토큰 재발급은 인증 없이 허용 (refresh token 유효성 검증은 내부에서)
+                        "/account/signup",
+                        "/account/login",
+                        "/oauth2/**",
+                        "/error",
+                        "/api/menu/**",
+                        "/",
+                        "/api/dashboard/monthly/**",
+                        "/account/refresh"
                 ).permitAll()
-                .anyRequest().authenticated()  // 그 외 나머지 요청은 인증 필요 (개인 분석 포함)
+                .anyRequest().authenticated()
         );
 
-        // OAuth2 로그인 설정
         http.oauth2Login(oauth2 -> oauth2
-                .loginPage("/account/login")                // 커스텀 로그인 페이지 경로
-                .successHandler(authenticationSuccessHandler()) // 로그인 성공 핸들러
-                .failureUrl("/account/login?error")         // 로그인 실패 시 리디렉션 경로
+                .loginPage("/account/login")
+                .successHandler(authenticationSuccessHandler())
+                .failureUrl("/account/login?error")
         );
 
-        // 폼로그인 및 HTTP Basic 인증 비활성화 (소셜 로그인만 사용)
         http.formLogin(form -> form.disable());
         http.httpBasic(basic -> basic.disable());
-
-        // 기본 로그아웃 기능 비활성화 (JWT 사용 시 서버 세션 불필요)
         http.logout(logout -> logout.disable());
 
-        // 인증 실패(미인증 접근) 시 예외 처리: 401 상태와 JSON 에러 메시지 반환
         http.exceptionHandling(exception -> exception
                 .authenticationEntryPoint(new AuthenticationEntryPoint() {
                     @Override
@@ -100,7 +102,6 @@ public class SecurityConfig {
                 })
         );
 
-        // JWT 필터 추가
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -113,7 +114,7 @@ public class SecurityConfig {
             String email = null;
             String providerId = null;
             String profileImage = null;
-            String username = null; // 구글에서 받은 username (nickname)
+            String oauth2Name = null;
 
             Object principalObj = authentication.getPrincipal();
 
@@ -121,12 +122,12 @@ public class SecurityConfig {
                 email = oidcUser.getEmail();
                 providerId = oidcUser.getSubject();
                 profileImage = oidcUser.getPicture();
-                username = oidcUser.getFullName(); // OidcUser에서 이름 가져오기
+                oauth2Name = oidcUser.getFullName();
             } else if (principalObj instanceof OAuth2User oauth2User) {
                 email = oauth2User.getAttribute("email");
                 providerId = oauth2User.getName();
                 profileImage = oauth2User.getAttribute("picture");
-                username = oauth2User.getAttribute("name"); // OAuth2User에서 이름 가져오기
+                oauth2Name = oauth2User.getAttribute("name");
             }
 
             if (providerId == null && email != null) {
@@ -141,7 +142,7 @@ public class SecurityConfig {
             }
 
             if (accountOpt.isPresent()) {
-                // 이미 가입된 회원일 경우: JWT 토큰 발급 후 **클라이언트에 토큰을 전달하고 메인 페이지로 리다이렉트**
+                // 변경: 기존 회원: JWT 토큰 발급 후 Access Token을 URL 쿼리 파라미터로 리다이렉트
                 Account existingAccount = accountOpt.get();
                 Authentication jwtAuth = new UsernamePasswordAuthenticationToken(
                         existingAccount.getEmail(), null, authentication.getAuthorities()
@@ -149,55 +150,58 @@ public class SecurityConfig {
                 String accessToken = jwtTokenProvider.createAccessToken(jwtAuth);
                 String refreshToken = jwtTokenProvider.createRefreshToken(jwtAuth);
 
-                // Refresh Token 저장
                 existingAccount.setRefreshToken(refreshToken);
                 accountRepository.save(existingAccount);
 
-                String redirectUrl = String.format("http://localhost:3000/ssabab/?accessToken=%s",
-                        accessToken, refreshToken, jwtTokenProvider.getAccessTokenRemainingExpirySeconds());
 
-                response.sendRedirect(redirectUrl);
+                // Access Token을 URL 쿼리 파라미터로 포함하여 프론트엔드 앱의 기본 경로로 리다이렉트
+                // 프론트엔드는 이 URL을 파싱하여 Access Token을 localStorage에 저장해야 합니다.
+                String redirectUrl = String.format("%s/?accessToken=%s", // 변경: expiresIn도 추가
+                        FRONTEND_APP_BASE_URL + "/ssabab", // 변경: 정확한 프론트엔드 앱의 시작 경로 (Next.js 앱의 기준 경로)
+                        URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()));
+//
+
+                response.sendRedirect(redirectUrl); // 브라우저를 이 URL로 리다이렉트
 
             } else {
-                // 신규 회원일 경우: 회원가입 페이지로 리다이렉션 시 필요한 OAuth2 정보를 쿼리 파라미터로 전달
-                StringBuilder redirectUrlBuilder = new StringBuilder("/account/signup?");
+                // 신규 회원: OAuth2 정보를 쿼리 파라미터로 포함하여 프론트엔드 회원가입 페이지로 리다이렉트
+                StringBuilder redirectUrlBuilder = new StringBuilder(FRONTEND_SIGNUP_BASE_URL + "/signup?"); // 변경: /signup 앞에 FRONTEND_SIGNUP_BASE_URL (http://localhost:3000)
+
                 if (email != null) {
-                    redirectUrlBuilder.append("email=").append(URLEncoder.encode(email, StandardCharsets.UTF_8));
+                    redirectUrlBuilder.append("email=").append(URLEncoder.encode(email, StandardCharsets.UTF_8.toString()));
                 }
                 if (provider != null) {
-                    if (redirectUrlBuilder.length() > "/account/signup?".length()) redirectUrlBuilder.append("&");
-                    redirectUrlBuilder.append("provider=").append(URLEncoder.encode(provider, StandardCharsets.UTF_8));
+                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    redirectUrlBuilder.append("provider=").append(URLEncoder.encode(provider, StandardCharsets.UTF_8.toString()));
                 }
                 if (providerId != null) {
-                    if (redirectUrlBuilder.length() > "/account/signup?".length()) redirectUrlBuilder.append("&");
-                    redirectUrlBuilder.append("providerId=").append(URLEncoder.encode(providerId, StandardCharsets.UTF_8));
+                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    redirectUrlBuilder.append("providerId=").append(URLEncoder.encode(providerId, StandardCharsets.UTF_8.toString()));
                 }
                 if (profileImage != null) {
-                    if (redirectUrlBuilder.length() > "/account/signup?".length()) redirectUrlBuilder.append("&");
-                    redirectUrlBuilder.append("profileImage=").append(URLEncoder.encode(profileImage, StandardCharsets.UTF_8));
+                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    redirectUrlBuilder.append("profileImage=").append(URLEncoder.encode(profileImage, StandardCharsets.UTF_8.toString()));
                 }
-                if (username != null) { // 새로 추가된 username
-                    if (redirectUrlBuilder.length() > "/account/signup?".length()) redirectUrlBuilder.append("&");
-                    redirectUrlBuilder.append("username=").append(URLEncoder.encode(username, StandardCharsets.UTF_8));
+                if (oauth2Name != null) {
+                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    redirectUrlBuilder.append("name=").append(URLEncoder.encode(oauth2Name, StandardCharsets.UTF_8.toString())); // 프론트엔드에서 name 쿼리 파라미터로 받도록
                 }
-
 
                 response.sendRedirect(redirectUrlBuilder.toString());
             }
         };
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 허용할 오리진 (Next.js 프론트엔드 도메인)
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://ssabab.com")); // TODO: 실제 Next.js 앱 도메인으로 변경하세요.
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메서드
-        configuration.setAllowedHeaders(Arrays.asList("*")); // 모든 헤더 허용 (필요에 따라 구체적으로 지정 가능)
-        configuration.setAllowCredentials(true); // 자격 증명 (쿠키, HTTP 인증 등) 허용
-        configuration.setMaxAge(3600L); // Pre-flight 요청 캐시 시간
-
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://ssabab.com"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // 모든 경로에 대해 CORS 설정 적용
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
     @Bean
