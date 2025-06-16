@@ -13,7 +13,7 @@ import ssabab.back.enums.FoodTag;
 @Getter
 @Builder
 public class FoodResponseDTO {
-    private final Long foodId;
+    private final Long foodId; // foodId 유지
     private final String foodName;
     private final FoodMainSub mainSub;
     private final FoodCategory category;
@@ -21,11 +21,11 @@ public class FoodResponseDTO {
 
     public static FoodResponseDTO from(Food food) {
         return FoodResponseDTO.builder()
-            .foodId(food.getFoodId())
-            .foodName(food.getFoodName())
-            .mainSub(food.getMainSub())
-            .category(food.getCategory())
-            .tag(food.getTag())
-            .build();
+                .foodId(food.getFoodId())
+                .foodName(food.getFoodName())
+                .mainSub(food.getMainSub())
+                .category(food.getCategory())
+                .tag(food.getTag())
+                .build();
     }
 }
