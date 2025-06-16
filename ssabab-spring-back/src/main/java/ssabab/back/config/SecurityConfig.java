@@ -21,6 +21,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 import ssabab.back.dto.TokenDTO;
 import ssabab.back.entity.Account;
 import ssabab.back.jwt.JwtAuthenticationFilter;
@@ -32,6 +33,10 @@ import java.io.PrintWriter;
 import java.util.Optional;
 import java.net.URLEncoder; // URL 인코딩을 위해 추가
 import java.nio.charset.StandardCharsets; // StandardCharsets 추가
+import org.springframework.web.cors.CorsConfiguration; // CorsConfiguration 추가
+import org.springframework.web.cors.CorsConfigurationSource; // CorsConfigurationSource 추가
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // UrlBasedCorsConfigurationSource 추가
+import java.util.Arrays; // Arrays 추가
 
 @Configuration
 @EnableWebSecurity
@@ -46,7 +51,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable());
-        http.cors(cors -> cors.disable());
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         // 세션 비활성화 (JWT 사용)
         http.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -148,7 +153,7 @@ public class SecurityConfig {
                 existingAccount.setRefreshToken(refreshToken);
                 accountRepository.save(existingAccount);
 
-                String redirectUrl = String.format("/?accessToken=%s&refreshToken=%s&tokenType=Bearer&expiresIn=%d",
+                String redirectUrl = String.format("http://localhost:3000/ssabab/?accessToken=%s",
                         accessToken, refreshToken, jwtTokenProvider.getAccessTokenRemainingExpirySeconds());
 
                 response.sendRedirect(redirectUrl);
@@ -181,7 +186,20 @@ public class SecurityConfig {
             }
         };
     }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // 허용할 오리진 (Next.js 프론트엔드 도메인)
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://ssabab.com")); // TODO: 실제 Next.js 앱 도메인으로 변경하세요.
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메서드
+        configuration.setAllowedHeaders(Arrays.asList("*")); // 모든 헤더 허용 (필요에 따라 구체적으로 지정 가능)
+        configuration.setAllowCredentials(true); // 자격 증명 (쿠키, HTTP 인증 등) 허용
+        configuration.setMaxAge(3600L); // Pre-flight 요청 캐시 시간
 
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // 모든 경로에 대해 CORS 설정 적용
+        return source;
+    }
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
