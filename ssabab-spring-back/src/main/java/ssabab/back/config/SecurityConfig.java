@@ -153,7 +153,7 @@ public class SecurityConfig {
                 existingAccount.setRefreshToken(refreshToken);
                 accountRepository.save(existingAccount);
 
-                String redirectUrl = String.format("/?accessToken=%s&refreshToken=%s&tokenType=Bearer&expiresIn=%d",
+                String redirectUrl = String.format("http://localhost:3000/ssabab/?accessToken=%s",
                         accessToken, refreshToken, jwtTokenProvider.getAccessTokenRemainingExpirySeconds());
 
                 response.sendRedirect(redirectUrl);
