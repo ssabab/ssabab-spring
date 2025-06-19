@@ -75,6 +75,8 @@ public class MenuController {
         }
     }
 
+//    @GetMapping("/{date")
+//
     /**
      * 관리자 메뉴 수정
      * 요청 예시: PUT /api/menu/{menuId}
