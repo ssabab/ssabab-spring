@@ -43,7 +43,9 @@ public class MenuReviewService {
                     newReview.setMenu(menu);
                     return newReview;
                 });
-
+        if (request.getMenuScore() != null) {
+            menuReview.setMenuScore(request.getMenuScore());
+        }
         if (request.getMenuComment() != null) {
             menuReview.setMenuComment(request.getMenuComment());
         }

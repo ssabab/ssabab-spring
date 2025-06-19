@@ -1,6 +1,9 @@
 package ssabab.back.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ssabab.back.dto.AccountDTO;
@@ -96,5 +99,23 @@ public class AccountService {
         account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
         return getProfile(account);
+    }
+
+    @Transactional(readOnly = true) // 읽기 전용 트랜잭션
+    public Account getLoginUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
+            throw new IllegalStateException("인증되지 않은 사용자입니다.");
+        }
+        String email = null;
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails userDetails) {
+            email = userDetails.getUsername(); // UserDetails의 username은 여기서는 email
+        } else {
+            throw new IllegalStateException("인증 정보에서 사용자 이메일을 찾을 수 없습니다.");
+        }
+
+        return accountRepository.findByEmail(email)
+                .orElseThrow(() -> new NoSuchElementException("로그인된 사용자 정보를 찾을 수 없습니다.")); // 변경: 메시지 구체화
     }
 }

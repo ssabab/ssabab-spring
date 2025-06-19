@@ -2,6 +2,7 @@ package ssabab.back.dto;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import ssabab.back.entity.FoodReview;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import java.util.List;
  */
 @Getter
 @Builder
+@Setter
 public class FoodReviewRequestDTO {
     private final Long menuId;
     private final List<ReviewItem> reviews;
@@ -19,6 +21,7 @@ public class FoodReviewRequestDTO {
      */
     @Getter
     @Builder
+    @Setter
     public static class ReviewItem {
         private final Long foodId;
         private final Long foodScore;

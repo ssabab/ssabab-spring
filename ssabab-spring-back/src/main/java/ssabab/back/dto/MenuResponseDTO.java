@@ -13,8 +13,7 @@ import java.util.stream.Collectors;
 @Getter
 @Builder
 public class MenuResponseDTO {
-    // private final Long menuId; // 제거
-    // private final LocalDate date; // 제거
+
     private final List<FoodResponseDTO> foods;
 
     public static MenuResponseDTO from(Menu menu) {
