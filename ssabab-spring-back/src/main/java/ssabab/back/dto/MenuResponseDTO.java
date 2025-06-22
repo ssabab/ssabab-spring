@@ -3,7 +3,7 @@ package ssabab.back.dto;
 import lombok.Builder;
 import lombok.Getter;
 import ssabab.back.entity.Menu; // Menu 엔티티 임포트 유지
-import java.time.LocalDate; // LocalDate 임포트 유지 (from 메서드 파라미터로 인해)
+import java.time.LocalDate; // LocalDate 임포트 유지 (from 메서드 파라미터로 인해) 
 import java.util.List;
 import java.util.stream.Collectors;
 
