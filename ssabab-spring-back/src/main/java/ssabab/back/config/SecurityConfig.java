@@ -156,7 +156,7 @@ public class SecurityConfig {
 
                 // Access Token을 URL 쿼리 파라미터로 포함하여 프론트엔드 앱의 기본 경로로 리다이렉트
                 // 프론트엔드는 이 URL을 파싱하여 Access Token을 localStorage에 저장해야 합니다.
-                String redirectUrl = String.format("%s/?accessToken=%s", // 변경: expiresIn도 추가
+                String redirectUrl = String.format("%s/?accessToken=%s&refreshToken=%s", // 변경: expiresIn도 추가
                         FRONTEND_APP_BASE_URL + "/ssabab", // 변경: 정확한 프론트엔드 앱의 시작 경로 (Next.js 앱의 기준 경로)
                         URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()));
 //
