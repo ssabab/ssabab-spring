@@ -14,7 +14,7 @@ import ssabab.back.enums.FoodTag;
 @Getter
 @Builder
 public class FoodResponseDTO {
-    private final Long foodId; // foodId 유지
+    private final Long foodId;
     private final String foodName;
     private final FoodMainSub mainSub;
     private final FoodCategory category;
