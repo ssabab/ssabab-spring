@@ -1,4 +1,4 @@
-// ssabab/back/dto/VoteCountDto.java (월간 대시보드에서 사용)
+// dto.VoteCountDTO
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;

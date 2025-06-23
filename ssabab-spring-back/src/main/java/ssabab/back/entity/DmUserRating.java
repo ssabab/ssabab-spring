@@ -1,3 +1,4 @@
+// dto.DmUserRating
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

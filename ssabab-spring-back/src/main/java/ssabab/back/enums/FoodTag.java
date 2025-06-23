@@ -1,3 +1,4 @@
+// enums.FoodTag
 package ssabab.back.enums;
 
 public enum FoodTag {

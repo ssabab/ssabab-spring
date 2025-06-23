@@ -1,3 +1,4 @@
+// entity.Account
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

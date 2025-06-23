@@ -1,4 +1,4 @@
-// ssabab/back/repository/DmUserCategoryTagPreferenceRepository.java (새로 추가)
+// repository.DmUserCategoryTagPreferenceRepository
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;

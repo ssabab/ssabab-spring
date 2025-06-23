@@ -1,3 +1,4 @@
+// dto.FoodResponseDTO
 package ssabab.back.dto;
 
 import lombok.Builder;

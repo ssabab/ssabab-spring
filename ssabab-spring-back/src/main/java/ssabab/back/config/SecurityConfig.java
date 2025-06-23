@@ -1,3 +1,4 @@
+// config.SecurityConfig
 package ssabab.back.config;
 
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,4 +1,4 @@
-// ssabab/back/service/MonthlyDashboardService.java
+// service.MonthlyDashboardService
 package ssabab.back.service;
 
 import lombok.RequiredArgsConstructor;

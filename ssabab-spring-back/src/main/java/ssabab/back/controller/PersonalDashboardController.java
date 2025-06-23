@@ -1,4 +1,4 @@
-// ssabab/back/controller/PersonalDashboardController.java
+// controller.PersonalDashboardController
 package ssabab.back.controller;
 
 import lombok.RequiredArgsConstructor;

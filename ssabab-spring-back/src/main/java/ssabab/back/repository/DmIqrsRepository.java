@@ -1,4 +1,4 @@
-// ssabab/back/repository/DmIqrsRepository.java (새로 추가)
+// repository.DmIqrsRepository
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;

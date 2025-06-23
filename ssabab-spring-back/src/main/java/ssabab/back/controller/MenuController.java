@@ -1,3 +1,4 @@
+// controller.MenuController
 package ssabab.back.controller;
 
 import lombok.RequiredArgsConstructor;

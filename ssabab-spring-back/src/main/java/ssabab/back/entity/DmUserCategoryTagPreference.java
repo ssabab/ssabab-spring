@@ -1,3 +1,4 @@
+// dto.DmUserCategoryTagPreference
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

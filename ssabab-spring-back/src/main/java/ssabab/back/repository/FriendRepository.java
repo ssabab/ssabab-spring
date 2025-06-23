@@ -1,3 +1,4 @@
+// repository.FriendRepository
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;

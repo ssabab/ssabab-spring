@@ -1,3 +1,4 @@
+// entity.DmMonthlyFoodRanking
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

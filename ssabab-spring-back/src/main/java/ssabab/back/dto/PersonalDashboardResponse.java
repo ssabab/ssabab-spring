@@ -1,4 +1,4 @@
-// ssabab/back/dto/PersonalDashboardResponse.java
+// dto.PersonalDashboardResponse
 package ssabab.back.dto;
 
 import lombok.Builder;

@@ -1,4 +1,4 @@
-// ssabab/back/dto/FoodPreferenceDto.java
+// dto.FoodPreferenceDTO
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;

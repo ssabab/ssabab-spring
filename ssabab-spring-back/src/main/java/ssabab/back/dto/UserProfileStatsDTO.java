@@ -1,4 +1,4 @@
-// ssabab/back/dto/UserProfileStatsDto.java (월간/일간 대시보드에서 사용)
+// dto.UserProfileStatsDTO
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-// ssabab/back/enums/IqrType.java (새로 추가)
+// enums.IqrType
 package ssabab.back.enums;
 
 public enum IqrType {

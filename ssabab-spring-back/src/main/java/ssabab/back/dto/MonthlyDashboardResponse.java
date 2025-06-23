@@ -1,4 +1,4 @@
-// ssabab/back/dto/MonthlyDashboardResponse.java
+// dto.MonthlyDashboardResponse
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;

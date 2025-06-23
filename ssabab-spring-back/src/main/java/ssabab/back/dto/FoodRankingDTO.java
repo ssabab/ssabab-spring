@@ -1,4 +1,4 @@
-// ssabab/back/dto/FoodRankingDto.java (Monthly Dashboard용 새로 추가)
+// dto.FoodRankingDTO
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;

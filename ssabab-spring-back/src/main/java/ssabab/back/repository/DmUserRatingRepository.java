@@ -1,4 +1,4 @@
-// ssabab/back/repository/DmUserRatingRepository.java (새로 추가)
+// repository.DmUserRatingRepository
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;

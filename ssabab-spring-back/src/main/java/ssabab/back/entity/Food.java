@@ -1,3 +1,4 @@
+// dto.Food
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

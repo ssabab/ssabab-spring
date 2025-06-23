@@ -1,4 +1,4 @@
-// ssabab/back/dto/RankingFoodDto.java (새로 추가)
+// dto.RankingFoodDTO
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;

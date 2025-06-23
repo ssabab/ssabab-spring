@@ -1,3 +1,4 @@
+// enums.FoodCategory
 package ssabab.back.enums;
 
 public enum FoodCategory {

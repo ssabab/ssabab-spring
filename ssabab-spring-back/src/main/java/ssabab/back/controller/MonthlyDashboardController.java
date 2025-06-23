@@ -1,4 +1,4 @@
-// ssabab/back/controller/MonthlyDashboardController.java
+// controller.MonthlyDashboardController
 package ssabab.back.controller;
 
 import lombok.RequiredArgsConstructor;

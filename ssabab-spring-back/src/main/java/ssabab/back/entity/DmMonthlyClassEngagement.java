@@ -1,3 +1,4 @@
+// entity.DmMonthlyClassEngagement
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

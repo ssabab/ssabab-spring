@@ -1,3 +1,4 @@
+// entity.DmIqrs
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

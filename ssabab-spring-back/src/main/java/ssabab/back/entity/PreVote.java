@@ -1,3 +1,4 @@
+// dto.PreVote
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

@@ -1,3 +1,4 @@
+// dto.WeeklyMenuResponse
 package ssabab.back.dto;
 
 import lombok.Builder;

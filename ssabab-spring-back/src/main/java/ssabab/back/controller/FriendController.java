@@ -1,3 +1,4 @@
+// controller.FriendController
 package ssabab.back.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-// ssabab/back/repository/DmMonthlyFoodRankingRepository.java
+// repository.DmMonthlyFoodRankingRepository
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;

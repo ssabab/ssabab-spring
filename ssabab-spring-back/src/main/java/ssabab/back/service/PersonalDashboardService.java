@@ -1,4 +1,4 @@
-// ssabab/back/service/PersonalDashboardService.java
+// service.PersonalDashboardService
 package ssabab.back.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

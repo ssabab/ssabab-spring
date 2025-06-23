@@ -1,4 +1,4 @@
-// ssabab/back/repository/DmMonthlyVoteCountRepository.java
+// repository.DmMonthlyVoteCountRepository
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;

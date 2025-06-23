@@ -1,3 +1,4 @@
+// dto.PreVoteRequestDTO
 package ssabab.back.dto;
 
 import lombok.Builder;

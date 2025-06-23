@@ -1,4 +1,4 @@
-// ssabab/back/dto/KeywordCountDto.java (Daily Dashboard용, 하지만 현재 Daily 제외)
+// dto.KeywordCountDTO
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;

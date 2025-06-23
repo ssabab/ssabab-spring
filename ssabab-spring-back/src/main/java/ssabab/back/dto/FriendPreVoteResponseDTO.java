@@ -1,3 +1,4 @@
+// dto.FriendPreVoteResponseDTO
 package ssabab.back.dto;
 
 import lombok.Builder;

@@ -1,3 +1,4 @@
+// entity.DmMonthlyVisitorCount
 package ssabab.back.entity;
 
 import jakarta.persistence.*;

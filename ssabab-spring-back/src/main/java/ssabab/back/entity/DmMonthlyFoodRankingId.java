@@ -1,4 +1,4 @@
-// ssabab/back/entity/DmMonthlyFoodRankingId.java
+// entity.DmMonthlyFoodRankingId
 package ssabab.back.entity;
 
 import lombok.AllArgsConstructor;
