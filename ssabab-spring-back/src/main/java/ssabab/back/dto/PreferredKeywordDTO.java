@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class PreferredKeywordDTO{
+public class PreferredKeywordDTO{
     private String value;
     private Integer count;
     private String color;

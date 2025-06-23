@@ -1,4 +1,4 @@
-// dto.FoodPreferenceDTO
+// dto.PreferredCategoryDTO
 package ssabab.back.dto;
 
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FoodPreferenceDTO {
-    private String name; // 카테고리명 또는 태그명
-    private Integer count; // 선호도 카운트
+public class PreferredCategoryDTO {
+    private String name;
+    private Integer percentage;
 }

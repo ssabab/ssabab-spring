@@ -1,4 +1,4 @@
-// config.SecurityConfig
+// config.SecurityConfig.java
 package ssabab.back.config;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,12 +25,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
-import ssabab.back.dto.TokenDTO; // 이제 TokenDTO는 응답 본문에 직접 쓰이지 않으므로, import는 불필요할 수 있음
+import ssabab.back.dto.TokenDTO;
 import ssabab.back.entity.Account;
 import ssabab.back.jwt.JwtAuthenticationFilter;
 import ssabab.back.jwt.JwtTokenProvider;
 import ssabab.back.repository.AccountRepository;
-import com.fasterxml.jackson.databind.ObjectMapper; // 이제 ObjectMapper는 사용되지 않음
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Optional;
@@ -55,8 +55,8 @@ public class SecurityConfig {
     @Value("${jwt.refresh-token-expiry}")
     private long refreshTokenExpirySeconds;
 
-    private static final String FRONTEND_APP_BASE_URL = "http://localhost:3000"; // 앱의 기본 경로
-    private static final String FRONTEND_SIGNUP_BASE_URL = "http://localhost:3000"; // 회원가입 페이지 기본 경로
+    private static final String FRONTEND_APP_BASE_URL = "http://localhost:3000";
+    private static final String FRONTEND_SIGNUP_BASE_URL = "http://localhost:3000";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -73,7 +73,7 @@ public class SecurityConfig {
                         "/error",
                         "/api/menu/**",
                         "/",
-                        "/api/dashboard/monthly/**",
+                        "/api/analysis/monthly", // 월간 분석 API는 모두 허용
                         "/account/refresh"
                 ).permitAll()
                 .anyRequest().authenticated()
@@ -143,7 +143,6 @@ public class SecurityConfig {
             }
 
             if (accountOpt.isPresent()) {
-                // 변경: 기존 회원: JWT 토큰 발급 후 Access Token을 URL 쿼리 파라미터로 리다이렉트
                 Account existingAccount = accountOpt.get();
                 Authentication jwtAuth = new UsernamePasswordAuthenticationToken(
                         existingAccount.getEmail(), null, authentication.getAuthorities()
@@ -154,20 +153,15 @@ public class SecurityConfig {
                 existingAccount.setRefreshToken(refreshToken);
                 accountRepository.save(existingAccount);
 
-
-                // Access Token을 URL 쿼리 파라미터로 포함하여 프론트엔드 앱의 기본 경로로 리다이렉트
-                // 프론트엔드는 이 URL을 파싱하여 Access Token을 localStorage에 저장해야 합니다.
-                String redirectUrl = String.format("%s/?accessToken=%s&refreshToken=%s", // 변경: expiresIn도 추가
-                        FRONTEND_APP_BASE_URL + "/ssabab", // 변경: 정확한 프론트엔드 앱의 시작 경로 (Next.js 앱의 기준 경로)
+                String redirectUrl = String.format("%s/?accessToken=%s&refreshToken=%s",
+                        FRONTEND_APP_BASE_URL + "/ssabab",
                         URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()),
                         URLEncoder.encode(refreshToken, StandardCharsets.UTF_8.toString()));
-//
 
-                response.sendRedirect(redirectUrl); // 브라우저를 이 URL로 리다이렉트
+                response.sendRedirect(redirectUrl);
 
             } else {
-                // 신규 회원: OAuth2 정보를 쿼리 파라미터로 포함하여 프론트엔드 회원가입 페이지로 리다이렉트
-                StringBuilder redirectUrlBuilder = new StringBuilder(FRONTEND_SIGNUP_BASE_URL + "/signup?"); // 변경: /signup 앞에 FRONTEND_SIGNUP_BASE_URL (http://localhost:3000)
+                StringBuilder redirectUrlBuilder = new StringBuilder(FRONTEND_SIGNUP_BASE_URL + "/signup?");
 
                 if (email != null) {
                     redirectUrlBuilder.append("email=").append(URLEncoder.encode(email, StandardCharsets.UTF_8.toString()));
@@ -186,7 +180,7 @@ public class SecurityConfig {
                 }
                 if (oauth2Name != null) {
                     if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
-                    redirectUrlBuilder.append("name=").append(URLEncoder.encode(oauth2Name, StandardCharsets.UTF_8.toString())); // 프론트엔드에서 name 쿼리 파라미터로 받도록
+                    redirectUrlBuilder.append("name=").append(URLEncoder.encode(oauth2Name, StandardCharsets.UTF_8.toString()));
                 }
 
                 response.sendRedirect(redirectUrlBuilder.toString());

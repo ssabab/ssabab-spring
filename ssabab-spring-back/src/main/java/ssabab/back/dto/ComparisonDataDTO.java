@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class ComparisonDataDTO{
+public class ComparisonDataDTO{
     private Double myRating;
     private Double avgRatingCommunity;
     private Double mySpicyPreference;
-    private Double avgSpicyPreference;
+    private Double avgSpicyCommunity;
     private Double myVarietySeeking;
     private Double avgVarietyCommunity;
 }
