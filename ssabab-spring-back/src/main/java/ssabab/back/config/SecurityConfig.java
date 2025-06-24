@@ -76,7 +76,8 @@ public class SecurityConfig {
                         "/api/analysis/monthly", // 월간 분석 API는 모두 허용
                         "/account/refresh",
                         "/swagger-ui.html",
-                        "/v3/api-docs"
+                        "/swagger-ui/index.html"
+
                 ).permitAll()
                 .anyRequest().authenticated()
         );

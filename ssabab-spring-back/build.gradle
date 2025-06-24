@@ -41,7 +41,8 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'  // JSON parsing (Jackson) 지원
 
     /* swagger 설정 */
-    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.5.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+
 }
 
 tasks.named('test') {

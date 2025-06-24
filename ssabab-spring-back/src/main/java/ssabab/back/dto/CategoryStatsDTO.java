@@ -1,17 +1,18 @@
-// dto.PreferredKeywordDTO
+// dto.CategoryStatsDTO
 package ssabab.back.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PreferredKeywordDTO{
-    private String value;
+public class CategoryStatsDTO {
+    // dm_user_category_stats
+    private Long userId;
+    private String category;
     private Integer count;
-    private String color;
 }

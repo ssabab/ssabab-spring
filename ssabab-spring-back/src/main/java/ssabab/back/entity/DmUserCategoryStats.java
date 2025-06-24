@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "dm_user_category_stats")
+@Table(name = "dm_user_category_stats",catalog = "ssabab_dm")
 @Data
 @Builder
 @NoArgsConstructor
@@ -27,6 +27,4 @@ public class DmUserCategoryStats {
     @Column(name = "count")
     private Integer count;
 
-    @Column(name = "ratio")
-    private Float ratio;
 }

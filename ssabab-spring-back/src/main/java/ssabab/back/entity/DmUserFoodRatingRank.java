@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import ssabab.back.enums.ScoreType;
 
 @Entity
-@Table(name = "dm_user_food_rating_rank")
+@Table(name = "dm_user_food_rating_rank",catalog = "ssabab_dm")
 @Data
 @Builder
 @NoArgsConstructor

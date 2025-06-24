@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "dm_monthly_statistic") // 테이블명 변경
+@Table(name = "dm_monthly_statistic",catalog = "ssabab_dm")
 @Data
 @NoArgsConstructor
 public class MonthlyStatistic {

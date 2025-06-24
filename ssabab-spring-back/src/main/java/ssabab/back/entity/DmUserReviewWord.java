@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "dm_user_review_word")
+@Table(name = "dm_user_review_word",catalog = "ssabab_dm")
 @Data
 @Builder
 @NoArgsConstructor
@@ -27,6 +27,4 @@ public class DmUserReviewWord {
     @Column(name = "count")
     private Integer count;
 
-    @Column(name = "sentiment_score")
-    private Float sentimentScore;
 }

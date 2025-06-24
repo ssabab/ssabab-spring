@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "dm_monthly_frequent_evaluator") // 테이블명 변경
+@Table(name = "dm_monthly_frequent_evaluator",catalog = "ssabab_dm") // 테이블명 변경
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
