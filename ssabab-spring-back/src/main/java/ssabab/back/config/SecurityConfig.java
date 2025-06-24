@@ -75,8 +75,10 @@ public class SecurityConfig {
                         "/",
                         "/api/analysis/monthly", // 월간 분석 API는 모두 허용
                         "/account/refresh",
-                        "/swagger-ui.html",
-                        "/swagger-ui/index.html"
+                        "/swagger-ui.html",         // Swagger UI 메인 페이지
+                        "/swagger-ui/**",           // Swagger UI의 모든 하위 정적 리소스 (CSS, JS 등)
+                        "/v3/api-docs/**",          // OpenAPI JSON/YAML 문서
+                        "/webjars/**"
 
                 ).permitAll()
                 .anyRequest().authenticated()
