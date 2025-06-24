@@ -131,30 +131,24 @@ public class MenuService {
         Menu menu = menuRepository.findById(menuId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 메뉴가 존재하지 않습니다: " + menuId));
 
-        List<MenuFood> existingLinks = menu.getMenuFoods();
-        if (existingLinks != null && !existingLinks.isEmpty()) {
-            menuFoodRepository.deleteAll(existingLinks);
-            existingLinks.clear();
-        } else {
-            menu.setMenuFoods(new ArrayList<>());
-        }
-
+        // 1. Food 목록 구성
+        List<Food> newFoods = new ArrayList<>();
         for (MenuRequestDTO.FoodRequestDTO dto : requestFoods) {
             Food food = foodRepository.findByFoodNameAndMainSubAndCategoryAndTag(
                     dto.getFoodName(), dto.getMainSub(), dto.getCategory(), dto.getTag())
                 .orElseGet(() -> foodRepository.save(
                     Food.builder()
-                            .foodName(dto.getFoodName())
-                            .mainSub(dto.getMainSub())
-                            .category(dto.getCategory())
-                            .tag(dto.getTag())
-                            .build()
+                        .foodName(dto.getFoodName())
+                        .mainSub(dto.getMainSub())
+                        .category(dto.getCategory())
+                        .tag(dto.getTag())
+                        .build()
                 ));
-
-            MenuFood link = new MenuFood(menu, food);
-            menu.getMenuFoods().add(link);
+            newFoods.add(food);
         }
 
+        // 2. 메뉴의 음식 목록 갱신 (기존 메뉴-음식 연결은 setFoods 내부에서 orphanRemoval로 삭제됨)
+        menu.setFoods(newFoods);
         menuRepository.save(menu);
     }
 
