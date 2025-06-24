@@ -1,4 +1,4 @@
-// dto.RatingDataDTO
+// dto.ReviewWordDTO
 package ssabab.back.dto;
 
 import lombok.Builder;
@@ -10,10 +10,9 @@ import lombok.AllArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RatingDataDTO {
-    // dm_user_summary
+public class ReviewWordDTO {
+    // dm_user_review_word
     private Long userId;
-    private Float avgScore;
-    private Integer totalReviews;
-    private Integer preVoteCount;
+    private String word;
+    private Integer count;
 }

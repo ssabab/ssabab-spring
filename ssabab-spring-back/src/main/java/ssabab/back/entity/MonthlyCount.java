@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "dm_monthly_count") // 테이블명 변경
+@Table(name = "dm_monthly_count",catalog = "ssabab_dm")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

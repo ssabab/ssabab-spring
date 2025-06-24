@@ -1,134 +1,85 @@
 // service/PersonalAnalysisService.java
 package ssabab.back.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ssabab.back.dto.*;
 import ssabab.back.entity.*;
-import ssabab.back.repository.*;
 import ssabab.back.enums.GroupType;
+import ssabab.back.enums.ScoreType;
+import ssabab.back.repository.*;
 
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor // 생성자 주입을 위해 사용
 public class PersonalAnalysisService {
 
-    private final AccountRepository accountRepository;
+    // 개별 JPA Repository들을 주입받습니다.
     private final DmUserSummaryRepository dmUserSummaryRepository;
     private final DmUserFoodRatingRankRepository dmUserFoodRatingRankRepository;
     private final DmUserCategoryStatsRepository dmUserCategoryStatsRepository;
     private final DmUserReviewWordRepository dmUserReviewWordRepository;
     private final DmUserInsightRepository dmUserInsightRepository;
     private final DmUserDiversityComparisonRepository dmUserDiversityComparisonRepository;
-    private final ObjectMapper objectMapper;
-    private final Random random = new Random();
-
 
     @Transactional(readOnly = true)
-    public PersonalAnalysisResponse getPersonalAnalysisData() throws JsonProcessingException {
-        Account user = getLoginUser();
-        Long userId = user.getUserId();
+    public PersonalAnalysisResponse getPersonalAnalysis(Long userId) {
+        // 1. dm_user_summary 조회 및 DTO 변환
+        RatingDataDTO summaryDto = dmUserSummaryRepository.findById(userId)
+                .map(summary -> RatingDataDTO.builder()
+                        .userId(summary.getUserId())
+                        .avgScore(summary.getAvgScore())
+                        .totalReviews(summary.getTotalReviews())
+                        .preVoteCount(summary.getPreVoteCount())
+                        .build())
+                .orElseThrow(() -> new NoSuchElementException("사용자 요약 정보를 찾을 수 없습니다. (userId: " + userId + ")"));
 
-        // Rating Data
-        DmUserSummary summary = dmUserSummaryRepository.findById(userId)
-                .orElse(new DmUserSummary(userId, 0.0f, 0, 0));
-        RatingDataDTO ratingData = new RatingDataDTO(
-                summary.getAvgScore() != null ? summary.getAvgScore().doubleValue() : 0.0,
-                summary.getTotalReviews()
-        );
+        // 2. dm_user_food_rating_rank 조회 및 Best/Worst 분리, DTO 변환
+        List<DmUserFoodRatingRank> allRanks = dmUserFoodRatingRankRepository.findByUserId(userId);
 
-        // Top/Lowest Rated Foods
-        List<DmUserFoodRatingRank> ranks = dmUserFoodRatingRankRepository.findByUserId(userId);
-        List<TopLowestRatedFoodsDTO> topRatedFoods = ranks.stream()
-                .filter(r -> "best".equals(r.getScoreType().name()))
-                .sorted(Comparator.comparing(DmUserFoodRatingRank::getRankOrder))
-                .map(r -> new TopLowestRatedFoodsDTO(r.getFoodName(), r.getFoodScore().doubleValue(), "N/A")) // date is not available
+        List<FoodRatingRankDTO> bestRanksDto = allRanks.stream()
+                .filter(rank -> rank.getScoreType() == ScoreType.best)
+                .map(rank -> new FoodRatingRankDTO(rank.getUserId(), rank.getFoodName(), rank.getFoodScore(), rank.getRankOrder(), rank.getScoreType()))
                 .collect(Collectors.toList());
 
-        List<TopLowestRatedFoodsDTO> lowestRatedFoods = ranks.stream()
-                .filter(r -> "worst".equals(r.getScoreType().name()))
-                .sorted(Comparator.comparing(DmUserFoodRatingRank::getRankOrder))
-                .map(r -> new TopLowestRatedFoodsDTO(r.getFoodName(), r.getFoodScore().doubleValue(), "N/A")) // date is not available
+        List<FoodRatingRankDTO> worstRanksDto = allRanks.stream()
+                .filter(rank -> rank.getScoreType() == ScoreType.worst)
+                .map(rank -> new FoodRatingRankDTO(rank.getUserId(), rank.getFoodName(), rank.getFoodScore(), rank.getRankOrder(), rank.getScoreType()))
                 .collect(Collectors.toList());
 
-        // Preferred Categories
-        List<DmUserCategoryStats> categoryStats = dmUserCategoryStatsRepository.findByUserId(userId);
-        long totalCategoryCount = categoryStats.stream().mapToLong(DmUserCategoryStats::getCount).sum();
-        List<PreferredCategoryDTO> preferredCategories = categoryStats.stream()
-                .map(s -> new PreferredCategoryDTO(
-                        s.getCategory(),
-                        totalCategoryCount > 0 ? (int) Math.round(((double) s.getCount() / totalCategoryCount) * 100) : 0
-                ))
-                .sorted(Comparator.comparing(PreferredCategoryDTO::getPercentage).reversed())
+        // 3. dm_user_category_stats 조회 및 DTO 변환
+        List<CategoryStatsDTO> categoryStatsDto = dmUserCategoryStatsRepository.findByUserId(userId).stream()
+                .map(stats -> new CategoryStatsDTO(stats.getUserId(), stats.getCategory(), stats.getCount()))
                 .collect(Collectors.toList());
 
-        // Preferred Keywords for Word Cloud
-        List<DmUserReviewWord> words = dmUserReviewWordRepository.findByUserId(userId);
-        List<PreferredKeywordDTO> preferredKeywordsForCloud = words.stream()
-                .map(w -> new PreferredKeywordDTO(
-                        w.getWord(),
-                        w.getCount(),
-                        generateRandomHexColor()
-                ))
+        // 4. dm_user_review_word 조회 및 DTO 변환
+        List<ReviewWordDTO> reviewWordsDto = dmUserReviewWordRepository.findByUserId(userId).stream()
+                .map(word -> new ReviewWordDTO(word.getUserId(), word.getWord(), word.getCount()))
                 .collect(Collectors.toList());
 
-        // Personal Insight
-        String personalInsight = dmUserInsightRepository.findById(userId)
-                .map(DmUserInsight::getInsight)
-                .orElse("아직 분석된 인사이트가 없습니다.");
+        // 5. dm_user_insight 조회 및 DTO 변환
+        UserInsightDTO insightDto = dmUserInsightRepository.findById(userId)
+                .map(insight -> new UserInsightDTO(insight.getUserId(), insight.getInsight()))
+                .orElse(new UserInsightDTO(userId, null)); // 데이터가 없을 경우
 
-        // Comparison Data (assuming 'all' group type for community average)
-        DmUserDiversityComparison comparison = dmUserDiversityComparisonRepository.findByUserIdAndGroupType(userId, GroupType.all)
-                .orElse(new DmUserDiversityComparison());
+        // 6. dm_user_group_comparison 조회 및 DTO 변환
+        UserGroupComparisonDTO comparisonDto = dmUserDiversityComparisonRepository.findByUserIdAndGroupType(userId, GroupType.all)
+                .map(comp -> new UserGroupComparisonDTO(comp.getUserId(), comp.getGroupType().name(), comp.getUserAvgScore(), comp.getUserDiversityScore(), comp.getGroupAvgScore(), comp.getGroupDiversityScore()))
+                .orElse(new UserGroupComparisonDTO(userId, GroupType.all.name(), null, null, null, null)); // 데이터가 없을 경우
 
-        ComparisonDataDTO comparisonData = ComparisonDataDTO.builder()
-                .myRating(comparison.getUserAvgScore() != null ? comparison.getUserAvgScore().doubleValue() : 0.0)
-                .avgRatingCommunity(comparison.getGroupAvgScore() != null ? comparison.getGroupAvgScore().doubleValue() : 0.0)
-                // Note: spicy/variety seeking mapping is an interpretation of diversity score
-                .mySpicyPreference(comparison.getUserDiversityScore() != null ? comparison.getUserDiversityScore().doubleValue() * 5 : 2.5) // Example mapping
-                .avgSpicyCommunity(comparison.getGroupDiversityScore() != null ? comparison.getGroupDiversityScore().doubleValue() * 5 : 2.5) // Example mapping
-                .myVarietySeeking(comparison.getUserDiversityScore() != null ? (1 - comparison.getUserDiversityScore().doubleValue()) * 5 : 2.5) // Example mapping
-                .avgVarietyCommunity(comparison.getGroupDiversityScore() != null ? (1 - comparison.getGroupDiversityScore().doubleValue()) * 5 : 2.5) // Example mapping
-                .build();
-
-
+        // 7. 최종 응답 DTO 빌드
         return PersonalAnalysisResponse.builder()
-                .ratingData(ratingData)
-                .topRatedFoods(topRatedFoods)
-                .lowestRatedFoods(lowestRatedFoods)
-                .preferredCategories(preferredCategories)
-                .preferredKeywordsForCloud(preferredKeywordsForCloud)
-                .personalInsight(personalInsight)
-                .comparisonData(comparisonData)
+                .dm_user_summary(summaryDto)
+                .dm_user_food_rating_rank_best(bestRanksDto)
+                .dm_user_food_rating_rank_worst(worstRanksDto)
+                .dm_user_category_stats(categoryStatsDto)
+                .dm_user_review_word(reviewWordsDto)
+                .dm_user_insight(insightDto)
+                .dm_user_group_comparison(comparisonDto)
                 .build();
-    }
-
-    private String generateRandomHexColor() {
-        // Generate random R, G, B values
-        int r = random.nextInt(256);
-        int g = random.nextInt(256);
-        int b = random.nextInt(256);
-        return String.format("#%02x%02x%02x", r, g, b).toUpperCase();
-    }
-
-    private Account getLoginUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-            throw new IllegalStateException("인증되지 않은 사용자입니다.");
-        }
-        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
-        return accountRepository.findByEmail(email)
-                .orElseThrow(() -> new NoSuchElementException("사용자 정보가 없습니다."));
     }
 }

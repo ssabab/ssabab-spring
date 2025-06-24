@@ -10,7 +10,7 @@ import ssabab.back.enums.GroupType;
 
 
 @Entity
-@Table(name = "dm_user_diversity_comparison")
+@Table(name = "dm_user_group_comparison",catalog = "ssabab_dm")
 @Data
 @Builder
 @NoArgsConstructor
