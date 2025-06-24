@@ -77,6 +77,7 @@ public class SecurityConfig {
                         "/account/refresh",
                         "/swagger-ui.html",
                         "/swagger-ui/index.html"
+
                 ).permitAll()
                 .anyRequest().authenticated()
         );
