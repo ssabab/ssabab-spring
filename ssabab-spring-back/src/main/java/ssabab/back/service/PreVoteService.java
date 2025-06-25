@@ -1,4 +1,3 @@
-// service.PreVoteService
 package ssabab.back.service;
 
 import lombok.RequiredArgsConstructor;
@@ -26,36 +25,43 @@ public class PreVoteService {
     private final MenuRepository menuRepository;
     private final FriendRepository friendRepository;
 
-    /**
-     * 사전 투표 등록 또는 수정 (날짜별로 1회만 가능)
-     */
+    // 사전 투표 등록
     @Transactional
-    public void submitPreVote(PreVoteRequestDTO request) {
+    public void registerPreVote(PreVoteRequestDTO request) {
         Account user = getLoginUser();
         Menu selectedMenu = menuRepository.findById(request.getMenuId())
                 .orElseThrow(() -> new NoSuchElementException("메뉴가 존재하지 않습니다."));
 
         LocalDate date = selectedMenu.getDate();
 
-        // 같은 날짜에 이미 투표한 기록이 있다면 수정, 없다면 새로 등록
-        preVoteRepository.findByUserUserIdAndMenuDate(user.getUserId(), date)
-                .ifPresentOrElse(
-                        existingVote -> {
-                            existingVote.setMenu(selectedMenu);
-                            preVoteRepository.save(existingVote);
-                        },
-                        () -> {
-                            PreVote newVote = new PreVote();
-                            newVote.setUser(user);
-                            newVote.setMenu(selectedMenu);
-                            preVoteRepository.save(newVote);
-                        }
-                );
+        boolean alreadyVoted = preVoteRepository.findByUserUserIdAndMenuDate(user.getUserId(), date).isPresent();
+        if (alreadyVoted) {
+            throw new IllegalStateException("이미 해당 날짜에 투표가 존재합니다");
+        }
+
+        PreVote newVote = new PreVote();
+        newVote.setUser(user);
+        newVote.setMenu(selectedMenu);
+        preVoteRepository.save(newVote);
     }
 
-    /**
-     * 친구들의 사전 투표 결과 조회 (로그인 사용자 기준)
-     */
+    // 사전 투표 수정
+    @Transactional
+    public void updatePreVote(PreVoteRequestDTO request) {
+        Account user = getLoginUser();
+        Menu selectedMenu = menuRepository.findById(request.getMenuId())
+                .orElseThrow(() -> new NoSuchElementException("메뉴가 존재하지 않습니다."));
+
+        LocalDate date = selectedMenu.getDate();
+
+        PreVote existingVote = preVoteRepository.findByUserUserIdAndMenuDate(user.getUserId(), date)
+                .orElseThrow(() -> new NoSuchElementException("기존 투표 내역이 없습니다"));
+
+        existingVote.setMenu(selectedMenu);
+        preVoteRepository.save(existingVote);
+    }
+
+    // 친구 투표 결과 조회
     @Transactional(readOnly = true)
     public List<FriendPreVoteResponseDTO> getFriendsPreVotes(LocalDate date) {
         Account user = getLoginUser();
@@ -81,24 +87,23 @@ public class PreVoteService {
                                     .votedMenuInfo(foodInfos)
                                     .build();
                         })
-                        .orElse(null) // 해당 날짜에 투표하지 않은 친구는 null 반환 후 필터링
+                        .orElse(null)
                 )
                 .filter(dto -> dto != null)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 현재 로그인한 사용자 조회
-     */
+    // 현재 로그인한 사용자 조회
     private Account getLoginUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
             throw new IllegalStateException("인증되지 않은 사용자입니다.");
         }
+
         String email = null;
         Object principal = authentication.getPrincipal();
         if (principal instanceof UserDetails userDetails) {
-            email = userDetails.getUsername(); // UserDetails의 username은 여기서는 email
+            email = userDetails.getUsername();
         } else {
             throw new IllegalStateException("인증 정보에서 사용자 이메일을 찾을 수 없습니다.");
         }

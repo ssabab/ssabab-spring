@@ -31,7 +31,9 @@ public class FoodReviewController {
             foodReviewService.submitFoodReviews(request.getMenuId(), request.getReviews()); // 기존 서비스 메서드 재사용
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "음식 평점 등록 완료")); // 201 Created 반환
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            // null-safe 메시지 처리
+            String errorMsg = (e.getMessage() != null) ? e.getMessage() : "리뷰 등록 중 서버 오류가 발생했습니다.";
+            return ResponseEntity.badRequest().body(Map.of("error", errorMsg));
         }
     }
 
@@ -49,7 +51,8 @@ public class FoodReviewController {
             foodReviewService.submitFoodReviews(request.getMenuId(), request.getReviews()); // 기존 서비스 메서드 재사용
             return ResponseEntity.ok(Map.of("message", "음식 평점 수정 완료")); // 200 OK 반환
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            String errorMsg = (e.getMessage() != null) ? e.getMessage() : "리뷰 수정 중 서버 오류가 발생했습니다.";
+            return ResponseEntity.badRequest().body(Map.of("error", errorMsg));
         }
     }
 }
