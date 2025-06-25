@@ -54,9 +54,8 @@ public class SecurityConfig {
 
     @Value("${jwt.refresh-token-expiry}")
     private long refreshTokenExpirySeconds;
-
-    private static final String FRONTEND_APP_BASE_URL = "http://localhost:3000";
-    private static final String FRONTEND_SIGNUP_BASE_URL = "http://localhost:3000";
+    @Value("${front.url}")
+    private  String FRONTEND_APP_BASE_URL;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -166,25 +165,25 @@ public class SecurityConfig {
                 response.sendRedirect(redirectUrl);
 
             } else {
-                StringBuilder redirectUrlBuilder = new StringBuilder(FRONTEND_SIGNUP_BASE_URL + "/signup?");
+                StringBuilder redirectUrlBuilder = new StringBuilder(FRONTEND_APP_BASE_URL + "/signup?");
 
                 if (email != null) {
                     redirectUrlBuilder.append("email=").append(URLEncoder.encode(email, StandardCharsets.UTF_8.toString()));
                 }
                 if (provider != null) {
-                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    if (redirectUrlBuilder.length() > (FRONTEND_APP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
                     redirectUrlBuilder.append("provider=").append(URLEncoder.encode(provider, StandardCharsets.UTF_8.toString()));
                 }
                 if (providerId != null) {
-                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    if (redirectUrlBuilder.length() > (FRONTEND_APP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
                     redirectUrlBuilder.append("providerId=").append(URLEncoder.encode(providerId, StandardCharsets.UTF_8.toString()));
                 }
                 if (profileImage != null) {
-                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    if (redirectUrlBuilder.length() > (FRONTEND_APP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
                     redirectUrlBuilder.append("profileImage=").append(URLEncoder.encode(profileImage, StandardCharsets.UTF_8.toString()));
                 }
                 if (oauth2Name != null) {
-                    if (redirectUrlBuilder.length() > (FRONTEND_SIGNUP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
+                    if (redirectUrlBuilder.length() > (FRONTEND_APP_BASE_URL + "/signup?").length()) redirectUrlBuilder.append("&");
                     redirectUrlBuilder.append("name=").append(URLEncoder.encode(oauth2Name, StandardCharsets.UTF_8.toString()));
                 }
 

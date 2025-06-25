@@ -5,6 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity; // ResponseEntity는 다른 메서드에서 사용되므로 import 유지
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -47,8 +48,8 @@ public class AccountController {
     private AccountRepository accountRepository;
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
-
-    private static final String FRONTEND_APP_BASE_URL = "http://localhost:3000/ssabab";
+    @Value("${front.url}")
+    private String FRONTEND_APP_BASE_URL;
 
 
     /**
@@ -115,19 +116,19 @@ public class AccountController {
             try {
                 birthDate = LocalDate.parse(birthDateStr);
             } catch (Exception e) {
-                response.sendRedirect("localhost:3000" + "/signup?error=invalid_birthdate");
+                response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=invalid_birthdate");
                 return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
             }
         }
 
         if (!StringUtils.hasText(email) && (!StringUtils.hasText(provider) || !StringUtils.hasText(providerId))) {
-            response.sendRedirect("localhost:3000" + "/signup?error=oauth_info_missing");
+            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=oauth_info_missing");
             return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
         }
         if (!StringUtils.hasText(username) || !StringUtils.hasText(ssafyYear) ||
                 !StringUtils.hasText(classNum) || !StringUtils.hasText(ssafyRegion) ||
                 !StringUtils.hasText(gender) || birthDate == null) {
-            response.sendRedirect("localhost:3000" + "/signup?error=required_fields_missing");
+            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=required_fields_missing");
             return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
         }
 
@@ -163,7 +164,7 @@ public class AccountController {
             accountRepository.save(newAccount);
 
             String redirectUrl = String.format("%s/?accessToken=%s",
-                    "http://localhost:3000/ssabab",
+                    FRONTEND_APP_BASE_URL+"/ssabab",
                     URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()),
                     jwtTokenProvider.getAccessTokenRemainingExpirySeconds());
 
@@ -171,10 +172,10 @@ public class AccountController {
             return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
 
         } catch (IllegalStateException e) { // 계정 중복 등
-            response.sendRedirect("http://localhost:3000" + "/signup?error=account_exists&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8.toString()));
+            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=account_exists&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8.toString()));
             return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
         } catch (Exception e) {
-            response.sendRedirect("http://localhost:3000" + "/signup?error=signup_failed&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8.toString()));
+            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=signup_failed&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8.toString()));
             return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
         }
     }
