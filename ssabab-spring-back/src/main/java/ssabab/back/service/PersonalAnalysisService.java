@@ -22,6 +22,7 @@ public class PersonalAnalysisService {
     private final DmUserFoodRatingRankRepository dmUserFoodRatingRankRepository;
     private final DmUserCategoryStatsRepository dmUserCategoryStatsRepository;
     private final DmUserReviewWordRepository dmUserReviewWordRepository;
+    private final DmUserTagStatsRepository dmUserTagStatsRepository;
     private final DmUserInsightRepository dmUserInsightRepository;
     private final DmUserDiversityComparisonRepository dmUserDiversityComparisonRepository;
 
@@ -53,28 +54,32 @@ public class PersonalAnalysisService {
         List<CategoryStatsDTO> categoryStatsDto = dmUserCategoryStatsRepository.findByUserId(userId).stream()
                 .map(stats -> new CategoryStatsDTO(stats.getUserId(), stats.getCategory(), stats.getCount()))
                 .collect(Collectors.toList());
-
-        // 4. dm_user_review_word 조회 및 DTO 변환
+        // 4. dm_user_tag_stats 조회 및 DTO 변환
+        List<TagStatsDTO> tagStatsDto = dmUserTagStatsRepository.findByUserId(userId).stream()
+                .map(stats -> new TagStatsDTO(stats.getUserId(), stats.getTag(), stats.getCount()))
+                .collect(Collectors.toList());
+        // 5. dm_user_review_word 조회 및 DTO 변환
         List<ReviewWordDTO> reviewWordsDto = dmUserReviewWordRepository.findByUserId(userId).stream()
                 .map(word -> new ReviewWordDTO(word.getUserId(), word.getWord(), word.getCount()))
                 .collect(Collectors.toList());
 
-        // 5. dm_user_insight 조회 및 DTO 변환
+        // 6. dm_user_insight 조회 및 DTO 변환
         UserInsightDTO insightDto = dmUserInsightRepository.findById(userId)
                 .map(insight -> new UserInsightDTO(insight.getUserId(), insight.getInsight()))
                 .orElse(new UserInsightDTO(userId, null)); // 데이터가 없을 경우
 
-        // 6. dm_user_group_comparison 조회 및 DTO 변환
+        // 7. dm_user_group_comparison 조회 및 DTO 변환
         UserGroupComparisonDTO comparisonDto = dmUserDiversityComparisonRepository.findByUserIdAndGroupType(userId, GroupType.all)
                 .map(comp -> new UserGroupComparisonDTO(comp.getUserId(), comp.getGroupType().name(), comp.getUserAvgScore(), comp.getUserDiversityScore(), comp.getGroupAvgScore(), comp.getGroupDiversityScore()))
                 .orElse(new UserGroupComparisonDTO(userId, GroupType.all.name(), null, null, null, null)); // 데이터가 없을 경우
 
-        // 7. 최종 응답 DTO 빌드
+        // 8. 최종 응답 DTO 빌드 (순서 번호 변경)
         return PersonalAnalysisResponse.builder()
                 .dm_user_summary(summaryDto)
                 .dm_user_food_rating_rank_best(bestRanksDto)
                 .dm_user_food_rating_rank_worst(worstRanksDto)
                 .dm_user_category_stats(categoryStatsDto)
+                .dm_user_tag_stats(tagStatsDto) // --- [추가된 필드] ---
                 .dm_user_review_word(reviewWordsDto)
                 .dm_user_insight(insightDto)
                 .dm_user_group_comparison(comparisonDto)

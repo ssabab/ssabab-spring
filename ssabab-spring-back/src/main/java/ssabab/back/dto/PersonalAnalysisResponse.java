@@ -18,7 +18,8 @@ public class PersonalAnalysisResponse {
     private List<FoodRatingRankDTO> dm_user_food_rating_rank_worst;
     // 테이블명: dm_user_category_stats
     private List<CategoryStatsDTO> dm_user_category_stats;
-
+    // 테이블명:  dm_user_tag_stats
+    private List<TagStatsDTO> dm_user_tag_stats;
     // 테이블명: dm_user_review_word
     private List<ReviewWordDTO> dm_user_review_word;
 
