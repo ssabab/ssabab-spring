@@ -24,7 +24,6 @@ public class MonthlyAnalysisService {
     private final MonthlyStatisticRepository monthlyStatisticRepository;
     private final MonthlyFrequentEvaluatorRepository monthlyFrequentEvaluatorRepository;
 
-    @Transactional(readOnly = true)
     public MonthlyAnalysisResponse getMonthlyAnalysisData() {
         // Top 5 Foods
         List<TopFoodDTO> topFoods = monthlyFoodRankingRepository.findByRankTypeOrderByRankAsc("best").stream()

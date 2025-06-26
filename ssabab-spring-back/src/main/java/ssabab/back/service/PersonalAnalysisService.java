@@ -3,7 +3,6 @@ package ssabab.back.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ssabab.back.dto.*;
 import ssabab.back.entity.*;
 import ssabab.back.enums.GroupType;
@@ -26,7 +25,6 @@ public class PersonalAnalysisService {
     private final DmUserInsightRepository dmUserInsightRepository;
     private final DmUserDiversityComparisonRepository dmUserDiversityComparisonRepository;
 
-    @Transactional(readOnly = true)
     public PersonalAnalysisResponse getPersonalAnalysis(Long userId) {
         // 1. dm_user_summary 조회 및 DTO 변환
         RatingDataDTO summaryDto = dmUserSummaryRepository.findById(userId)
