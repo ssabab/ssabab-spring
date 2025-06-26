@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "dm_monthly_count",catalog = "ssabab_dm")
+@Table(name = "monthly_count",catalog = "ssabab_dm")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
