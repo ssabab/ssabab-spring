@@ -4,8 +4,12 @@ services:
       context: ./ssabab-spring-back
       dockerfile: Dockerfile
     
-    image: yooseunghyeon/ssabab:back-v1.4
+    image: yooseunghyeon/ssabab:back-v1.6
+
     container_name: ssabab-back
+
     ports:
       - "8080:8080"
 
+    env_file:
+      - ../.env
