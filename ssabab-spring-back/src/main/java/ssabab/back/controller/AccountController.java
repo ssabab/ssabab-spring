@@ -253,6 +253,14 @@ public class AccountController {
     }
 
     /**
+     * 유저 네임 중복 체크 로직
+     */
+    @GetMapping("/check-username")
+    public ResponseEntity<Boolean> checkUsernameExists(@RequestParam String username) {
+        boolean exists = accountRepository.findByUsername(username).isPresent();
+        return ResponseEntity.ok(exists);
+    }
+    /**
      * Access Token 재발급 엔드포인트
      */
     @PostMapping("/refresh")

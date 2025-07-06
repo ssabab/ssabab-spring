@@ -34,4 +34,3 @@ jwt:
   secret: ${JWT_SECRET_KEY} # 실제 시크릿 키는 환경 변수로 대체
   access-token-expiry: 1800     # Access Token 유효기간 (초) - 1800초 == 30분
   refresh-token-expiry: 604800 # Refresh Token 유효기간 (초) - 604800초 == 7일
-
