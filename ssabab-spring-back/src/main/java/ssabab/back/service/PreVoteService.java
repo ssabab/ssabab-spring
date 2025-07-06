@@ -1,4 +1,4 @@
-// service.PreVoteService
+// service.PreVoteService.java
 package ssabab.back.service;
 
 import lombok.RequiredArgsConstructor;
@@ -9,12 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ssabab.back.dto.FriendPreVoteResponseDTO;
 import ssabab.back.dto.PreVoteRequestDTO;
+import ssabab.back.dto.PreVoteResponseDTO; // --- [추가된 import] ---
 import ssabab.back.entity.*;
 import ssabab.back.repository.*;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional; // --- [추가된 import] ---
 import java.util.stream.Collectors;
 
 @Service
@@ -53,6 +55,26 @@ public class PreVoteService {
                 );
     }
 
+
+    /**
+     * 특정 날짜에 대한 현재 사용자의 사전 투표 정보를 조회합니다.
+     * @param date 조회할 날짜
+     * @return 사용자가 투표한 메뉴 ID가 담긴 DTO. 투표하지 않았다면 menuId는 null.
+     */
+    @Transactional(readOnly = true)
+    public PreVoteResponseDTO getUserPreVoteForDate(LocalDate date) {
+        Account user = getLoginUser();
+
+        // findByUserUserIdAndMenuDate를 사용하여 해당 날짜의 투표를 찾습니다.
+        Optional<PreVote> preVoteOpt = preVoteRepository.findByUserUserIdAndMenuDate(user.getUserId(), date);
+
+        // Optional을 처리하여 menuId를 추출하거나, 없으면 null을 반환합니다.
+        Long votedMenuId = preVoteOpt.map(preVote -> preVote.getMenu().getMenuId()).orElse(null);
+
+        return new PreVoteResponseDTO(votedMenuId);
+    }
+
+
     /**
      * 친구들의 사전 투표 결과 조회 (로그인 사용자 기준)
      */
@@ -81,7 +103,7 @@ public class PreVoteService {
                                     .votedMenuInfo(foodInfos)
                                     .build();
                         })
-                        .orElse(null) // 해당 날짜에 투표하지 않은 친구는 null 반환 후 필터링
+                        .orElse(null) // 해당 날짜에 리뷰가 없는 친구는 null 반환 후 필터링
                 )
                 .filter(dto -> dto != null)
                 .collect(Collectors.toList());
