@@ -50,7 +50,7 @@ public class MenuService {
     public WeeklyMenuResponse getWeeklyMenus() {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).minusWeeks(1);
-        LocalDate endDate = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.FRIDAY));
+        LocalDate endDate = today.with(TemporalAdjusters.next(DayOfWeek.FRIDAY));
 
         List<Menu> menusInPeriod = menuRepository.findByDateBetweenOrderByDateAscMenuIdAsc(startDate, endDate);
 
