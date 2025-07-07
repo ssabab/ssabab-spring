@@ -155,7 +155,7 @@ public class SecurityConfig {
                 accountRepository.save(existingAccount);
 
                 String redirectUrl = String.format("%s/?accessToken=%s&refreshToken=%s",
-                        FRONTEND_APP_BASE_URL + "/",
+                        FRONTEND_APP_BASE_URL,
                         URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()),
                         URLEncoder.encode(refreshToken, StandardCharsets.UTF_8.toString()));
 

@@ -164,7 +164,7 @@ public class AccountController {
             accountRepository.save(newAccount);
 
             String redirectUrl = String.format("%s/?accessToken=%s",
-                    FRONTEND_APP_BASE_URL+"/",
+                    FRONTEND_APP_BASE_URL,
                     URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()),
                     jwtTokenProvider.getAccessTokenRemainingExpirySeconds());
 
