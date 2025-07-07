@@ -1,4 +1,4 @@
-// dto/analysis/CumulativeEvaluationsDTO.java
+// dto/CumulativeEvaluationsDTO.java
 package ssabab.back.dto;
 
 import lombok.Builder;

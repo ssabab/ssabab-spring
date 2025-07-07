@@ -38,6 +38,7 @@ public class MenuReviewService {
         Account user = getLoginUser();
 
         // 해당 사용자와 날짜로 리뷰 목록을 조회합니다.
+        // 이 메서드는 단일 사용자에 대한 단일 쿼리이므로 큰 문제는 없음
         List<MenuReview> reviews = menuReviewRepository.findByUserUserIdAndMenuDate(user.getUserId(), date);
 
         // 첫 번째 리뷰가 있다면 그 메뉴의 ID를, 없다면 null을 DTO에 담아 반환합니다.
@@ -85,31 +86,38 @@ public class MenuReviewService {
         Long userId = user.getUserId();
         List<Friend> friends = friendRepository.findByUserUserId(userId);
 
-        return friends.stream()
+        // 친구들의 ID 목록 추출
+        List<Long> friendIds = friends.stream()
                 .map(Friend::getFriend)
-                .map(friend -> menuReviewRepository.findByUserUserIdAndMenuDate(friend.getUserId(), date).stream()
-                        .findFirst()
-                        .map(menuReview -> {
-                            Menu menu = menuReview.getMenu();
-                            List<FriendMenuReviewResponseDTO.FoodInfo> foodInfos = menu.getFoods().stream()
-                                    .map(food -> new FriendMenuReviewResponseDTO.FoodInfo(
-                                            food.getFoodId(),
-                                            food.getFoodName()
-                                    ))
-                                    .collect(Collectors.toList());
+                .map(Account::getUserId)
+                .collect(Collectors.toList());
 
-                            return FriendMenuReviewResponseDTO.builder()
-                                    .friendId(friend.getUserId())
-                                    .friendName(friend.getUsername())
-                                    .votedMenuId(menu.getMenuId())
-                                    .votedMenuDate(menu.getDate())
-                                    .votedMenuInfo(foodInfos)
-                                    .averageMenuScore(menuReview.getMenuScore())
-                                    .build();
-                        })
-                        .orElse(null)
-                )
-                .filter(dto -> dto != null)
+        // 한 번의 쿼리로 친구들의 모든 메뉴 리뷰를 가져옴 (Menu, Food와 함께 Fetch Join)
+        // 이 쿼리가 N+1 문제를 해결합니다.
+        List<MenuReview> friendMenuReviews = menuReviewRepository.findByUserUserIdInAndMenuDateWithMenuAndFoods(friendIds, date);
+
+        return friendMenuReviews.stream()
+                .map(menuReview -> {
+                    Account friend = menuReview.getUser(); // 이미 Fetch Join으로 로드된 User
+                    Menu menu = menuReview.getMenu(); // 이미 Fetch Join으로 로드된 Menu
+
+                    // Food 정보도 이미 Fetch Join으로 로드되었으므로 추가 쿼리 없음
+                    List<FriendMenuReviewResponseDTO.FoodInfo> foodInfos = menu.getFoods().stream()
+                            .map(food -> new FriendMenuReviewResponseDTO.FoodInfo(
+                                    food.getFoodId(),
+                                    food.getFoodName()
+                            ))
+                            .collect(Collectors.toList());
+
+                    return FriendMenuReviewResponseDTO.builder()
+                            .friendId(friend.getUserId())
+                            .friendName(friend.getUsername())
+                            .votedMenuId(menu.getMenuId())
+                            .votedMenuDate(menu.getDate())
+                            .votedMenuInfo(foodInfos)
+                            .averageMenuScore(menuReview.getMenuScore())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
