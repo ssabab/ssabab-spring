@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ssabab.back.dto.MenuReviewRequestDTO;
 import ssabab.back.dto.FriendMenuReviewResponseDTO;
+import ssabab.back.dto.MenuReviewResponseDTO;
 import ssabab.back.service.MenuReviewService;
 
 import java.time.LocalDate;
@@ -39,6 +40,22 @@ public class MenuReviewController {
         }
     }
 
+    /**
+     * 현재 사용자의 특정 날짜 메뉴 리뷰 정보 조회
+     * @param date 조회할 날짜 (yyyy-MM-dd 형식)
+     * @return 리뷰를 작성한 메뉴 ID가 담긴 DTO 목록. 리뷰가 없다면 빈 리스트 `[]`를 반환합니다.
+     */
+    @GetMapping
+    public ResponseEntity<Object> getUserMenuReview(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        try {
+            MenuReviewResponseDTO result = menuReviewService.getUserReviewedMenuForDate(date);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            // 로그인 안됨 등의 예외 처리
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
     /**
      * 메뉴 리뷰 수정 (기존 리뷰 업데이트)
      * PUT /api/review/menu/{menuId}

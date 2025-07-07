@@ -27,14 +27,17 @@ public class MenuService {
 
     /**
      * 특정 날짜의 메뉴 목록을 조회합니다.
+     * @Query와 JOIN FETCH를 사용하여 N+1 문제를 해결합니다.
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getMenusByDate(LocalDate date) {
-        List<Menu> menus = menuRepository.findByDateOrderByMenuIdAsc(date);
+        // 변경된 리포지토리 메서드 사용
+        List<Menu> menus = menuRepository.findMenusWithFoodsByDate(date); //
 
         return menus.stream().map(menu -> {
             Map<String, Object> menuMap = new LinkedHashMap<>();
             menuMap.put("menuId", menu.getMenuId());
+            // menu.getFoods() 호출 시 이미 로딩된 Food 정보를 사용합니다.
             List<FoodResponseDTO> foodDTOs = menu.getFoods().stream()
                     .map(FoodResponseDTO::from)
                     .toList();
@@ -45,6 +48,7 @@ public class MenuService {
 
     /**
      * 현재 주차(지난주 월요일 ~ 이번 주 금요일)의 전체 메뉴를 요일별로 반환합니다.
+     * @Query와 JOIN FETCH를 사용하여 N+1 문제를 해결하고, 로직을 효율적으로 개선합니다.
      */
     @Transactional(readOnly = true)
     public WeeklyMenuResponse getWeeklyMenus() {
@@ -52,33 +56,35 @@ public class MenuService {
         LocalDate startDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).minusWeeks(1);
         LocalDate endDate = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.FRIDAY));
 
-        List<Menu> menusInPeriod = menuRepository.findByDateBetweenOrderByDateAscMenuIdAsc(startDate, endDate);
+        // 변경된 리포지토리 메서드 사용
+        List<Menu> menusInPeriod = menuRepository.findMenusWithFoodsByDateRange(startDate, endDate); //
 
-        Map<LocalDate, DailyMenuResponse.DailyMenuResponseBuilder> dailyMenuBuilders = new LinkedHashMap<>();
+        // 날짜별로 메뉴를 그룹화
+        Map<LocalDate, List<Menu>> menusByDate = menusInPeriod.stream()
+                .collect(Collectors.groupingBy(Menu::getDate, LinkedHashMap::new, Collectors.toList()));
+
+        List<DailyMenuResponse> weeklyMenus = new ArrayList<>();
+
+        // 시작일부터 종료일까지 순회하며 DailyMenuResponse 구성
         for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
             if (d.getDayOfWeek() != DayOfWeek.SATURDAY && d.getDayOfWeek() != DayOfWeek.SUNDAY) {
-                dailyMenuBuilders.put(d, DailyMenuResponse.builder().date(d).menu1(MenuResponseDTO.empty()).menu2(MenuResponseDTO.empty()));
-            }
-        }
+                List<Menu> dailyMenus = menusByDate.getOrDefault(d, Collections.emptyList());
 
-        Map<LocalDate, Integer> menuCountMap = new HashMap<>();
-        for (Menu menu : menusInPeriod) {
-            LocalDate menuDate = menu.getDate();
-            int currentCount = menuCountMap.getOrDefault(menuDate, 0);
-            DailyMenuResponse.DailyMenuResponseBuilder builder = dailyMenuBuilders.get(menuDate);
-            if (builder != null) {
-                if (currentCount == 0) {
-                    builder.menu1(MenuResponseDTO.from(menu));
-                } else if (currentCount == 1) {
-                    builder.menu2(MenuResponseDTO.from(menu));
+                MenuResponseDTO menu1 = MenuResponseDTO.empty();
+                MenuResponseDTO menu2 = MenuResponseDTO.empty();
+
+                if (!dailyMenus.isEmpty()) {
+                    // menuId 기준으로 정렬되어 있을 것이므로, 첫 번째와 두 번째 메뉴를 가져옴
+                    if (dailyMenus.size() > 0) {
+                        menu1 = MenuResponseDTO.from(dailyMenus.get(0));
+                    }
+                    if (dailyMenus.size() > 1) {
+                        menu2 = MenuResponseDTO.from(dailyMenus.get(1));
+                    }
                 }
-                menuCountMap.put(menuDate, currentCount + 1);
+                weeklyMenus.add(DailyMenuResponse.builder().date(d).menu1(menu1).menu2(menu2).build());
             }
         }
-
-        List<DailyMenuResponse> weeklyMenus = dailyMenuBuilders.values().stream()
-                .map(DailyMenuResponse.DailyMenuResponseBuilder::build)
-                .collect(Collectors.toList());
 
         return WeeklyMenuResponse.builder().weeklyMenus(weeklyMenus).build();
     }
@@ -91,10 +97,8 @@ public class MenuService {
         Account user = getLoginUser();
         validateAdmin(user);
 
-        if (menuBlocks == null || menuBlocks.size() != 2) {
-            throw new IllegalArgumentException("2개의 메뉴 블록이 필요합니다.");
-        }
-        if (menuRepository.findByDate(date).size() >= 2) {
+        // findMenusWithFoodsByDateForAdmin 메서드를 사용하여 해당 날짜의 메뉴 존재 여부 확인
+        if (menuRepository.findMenusWithFoodsByDateForAdmin(date).size() >= 2) { //
             throw new IllegalArgumentException("이미 해당 날짜에 2개의 메뉴가 존재합니다.");
         }
 
@@ -128,22 +132,23 @@ public class MenuService {
         Account user = getLoginUser();
         validateAdmin(user);
 
-        Menu menu = menuRepository.findById(menuId)
+        // findByIdWithFoods 메서드를 사용하여 Menu와 Food를 함께 가져옵니다.
+        Menu menu = menuRepository.findByIdWithFoods(menuId) //
                 .orElseThrow(() -> new IllegalArgumentException("해당 메뉴가 존재하지 않습니다: " + menuId));
 
         // 1. Food 목록 구성
         List<Food> newFoods = new ArrayList<>();
         for (MenuRequestDTO.FoodRequestDTO dto : requestFoods) {
             Food food = foodRepository.findByFoodNameAndMainSubAndCategoryAndTag(
-                    dto.getFoodName(), dto.getMainSub(), dto.getCategory(), dto.getTag())
-                .orElseGet(() -> foodRepository.save(
-                    Food.builder()
-                        .foodName(dto.getFoodName())
-                        .mainSub(dto.getMainSub())
-                        .category(dto.getCategory())
-                        .tag(dto.getTag())
-                        .build()
-                ));
+                            dto.getFoodName(), dto.getMainSub(), dto.getCategory(), dto.getTag())
+                    .orElseGet(() -> foodRepository.save(
+                            Food.builder()
+                                    .foodName(dto.getFoodName())
+                                    .mainSub(dto.getMainSub())
+                                    .category(dto.getCategory())
+                                    .tag(dto.getTag())
+                                    .build()
+                    ));
             newFoods.add(food);
         }
 
@@ -160,7 +165,8 @@ public class MenuService {
         Account user = getLoginUser();
         validateAdmin(user);
 
-        List<Menu> menus = menuRepository.findByDate(date);
+        // findMenusWithFoodsByDateForAdmin 메서드를 사용하여 삭제할 메뉴를 가져옵니다.
+        List<Menu> menus = menuRepository.findMenusWithFoodsByDateForAdmin(date); //
         if (menus.isEmpty()) {
             throw new IllegalArgumentException("해당 날짜에 삭제할 메뉴가 없습니다: " + date);
         }

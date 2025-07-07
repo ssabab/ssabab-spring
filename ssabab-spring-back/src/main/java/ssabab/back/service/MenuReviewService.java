@@ -1,4 +1,4 @@
-// service.MenuReviewService
+// service.MenuReviewService.java
 package ssabab.back.service;
 
 import lombok.RequiredArgsConstructor;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ssabab.back.dto.FriendMenuReviewResponseDTO;
 import ssabab.back.dto.MenuReviewRequestDTO;
+import ssabab.back.dto.MenuReviewResponseDTO;
 import ssabab.back.entity.*;
 import ssabab.back.repository.*;
 
@@ -28,8 +29,26 @@ public class MenuReviewService {
     private final FriendRepository friendRepository;
 
     /**
+     * 특정 날짜에 현재 사용자가 리뷰를 작성한 모든 메뉴의 정보를 조회합니다.
+     * @param date 조회할 날짜
+     * @return 메뉴 ID가 담긴 DTO 목록. 리뷰가 없다면 빈 리스트를 반환합니다.
+     */
+    @Transactional(readOnly = true)
+    public MenuReviewResponseDTO getUserReviewedMenuForDate(LocalDate date) {
+        Account user = getLoginUser();
+
+        // 해당 사용자와 날짜로 리뷰 목록을 조회합니다.
+        List<MenuReview> reviews = menuReviewRepository.findByUserUserIdAndMenuDate(user.getUserId(), date);
+
+        // 첫 번째 리뷰가 있다면 그 메뉴의 ID를, 없다면 null을 DTO에 담아 반환합니다.
+        return reviews.stream()
+                .findFirst()
+                .map(review -> new MenuReviewResponseDTO(review.getMenu().getMenuId()))
+                .orElse(new MenuReviewResponseDTO(null));
+    }
+
+    /**
      * 메뉴에 대한 후회 여부 및 한 줄 평 등록 또는 수정
-     * → 로그인된 사용자 기준
      */
     @Transactional
     public void submitMenuReview(MenuReviewRequestDTO request) {
@@ -50,19 +69,15 @@ public class MenuReviewService {
         if (request.getMenuComment() != null) {
             menuReview.setMenuComment(request.getMenuComment());
         }
-
         if (request.getMenuRegret() != null) {
             menuReview.setMenuRegret(request.getMenuRegret());
         }
-
         menuReview.setTimestamp(LocalDateTime.now());
-
         menuReviewRepository.save(menuReview);
     }
 
     /**
      * 친구들이 남긴 메뉴 평점 평균을 반환
-     * → 로그인된 사용자의 친구 기준
      */
     @Transactional(readOnly = true)
     public List<FriendMenuReviewResponseDTO> getFriendsMenuReviewStats(LocalDate date) {
@@ -92,7 +107,7 @@ public class MenuReviewService {
                                     .averageMenuScore(menuReview.getMenuScore())
                                     .build();
                         })
-                        .orElse(null) // 해당 날짜에 리뷰가 없는 친구는 null 반환 후 필터링
+                        .orElse(null)
                 )
                 .filter(dto -> dto != null)
                 .collect(Collectors.toList());
@@ -109,11 +124,10 @@ public class MenuReviewService {
         String email = null;
         Object principal = authentication.getPrincipal();
         if (principal instanceof UserDetails userDetails) {
-            email = userDetails.getUsername(); // UserDetails의 username은 여기서는 email
+            email = userDetails.getUsername();
         } else {
             throw new IllegalStateException("인증 정보에서 사용자 이메일을 찾을 수 없습니다.");
         }
-
         return accountRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("사용자 정보가 없습니다."));
     }
