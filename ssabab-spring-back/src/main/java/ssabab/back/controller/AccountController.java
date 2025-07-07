@@ -93,17 +93,18 @@ public class AccountController {
      * RequestBody Map에서 모든 회원가입 정보(OAuth2 + 사용자 입력)를 받습니다.
      * Authentication 객체 사용은 제거됩니다.
      */
+    /**
+     * 회원가입 처리 엔드포인트 (POST 요청)
+     * API 호출에 맞게 JSON 데이터를 응답하도록 수정
+     */
     @PostMapping("/signup")
-    public void signup(HttpServletResponse response, // 변경: 반환 타입을 void로 변경했으므로, 메서드가 명시적으로 ResponseEntity를 반환하지 않음
-                       @RequestBody Map<String, Object> signupRequest) throws IOException { // 변경: throws IOException 유지
-        // OAuth2 정보 추출
+    public ResponseEntity<Object> signup(@RequestBody Map<String, Object> signupRequest) {
+        // HttpServletResponse 파라미터 제거, 반환 타입을 ResponseEntity<Object>로 변경
+
         String provider = (String) signupRequest.get("provider");
         String email = (String) signupRequest.get("email");
         String providerId = (String) signupRequest.get("providerId");
         String profileImage = (String) signupRequest.get("profileImage");
-        String name = (String) signupRequest.get("username");
-
-        // 사용자 입력 정보 추출 (SignupRequestDTO 필드와 일치)
         String username = (String) signupRequest.get("username");
         String ssafyYear = (String) signupRequest.get("ssafyYear");
         String classNum = (String) signupRequest.get("classNum");
@@ -111,25 +112,21 @@ public class AccountController {
         String gender = (String) signupRequest.get("gender");
         String birthDateStr = (String) signupRequest.get("birthDate");
 
-        LocalDate birthDate = null;
-        if (StringUtils.hasText(birthDateStr)) {
-            try {
-                birthDate = LocalDate.parse(birthDateStr);
-            } catch (Exception e) {
-                response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=invalid_birthdate");
-                return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
-            }
+        LocalDate birthDate;
+        try {
+            birthDate = StringUtils.hasText(birthDateStr) ? LocalDate.parse(birthDateStr) : null;
+        } catch (Exception e) {
+            // 리다이렉션 대신 에러 JSON 응답
+            return ResponseEntity.badRequest().body(Map.of("error", "invalid_birthdate", "message", "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)"));
         }
 
-        if (!StringUtils.hasText(email) && (!StringUtils.hasText(provider) || !StringUtils.hasText(providerId))) {
-            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=oauth_info_missing");
-            return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
+        if (!StringUtils.hasText(email) || (!StringUtils.hasText(provider) || !StringUtils.hasText(providerId))) {
+            return ResponseEntity.badRequest().body(Map.of("error", "oauth_info_missing", "message", "소셜 로그인 정보가 부족합니다."));
         }
         if (!StringUtils.hasText(username) || !StringUtils.hasText(ssafyYear) ||
                 !StringUtils.hasText(classNum) || !StringUtils.hasText(ssafyRegion) ||
                 !StringUtils.hasText(gender) || birthDate == null) {
-            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=required_fields_missing");
-            return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
+            return ResponseEntity.badRequest().body(Map.of("error", "required_fields_missing", "message", "필수 입력 항목이 누락되었습니다."));
         }
 
         if (!StringUtils.hasText(providerId) && StringUtils.hasText(email)) {
@@ -153,9 +150,7 @@ public class AccountController {
             );
 
             Authentication jwtAuth = new UsernamePasswordAuthenticationToken(
-                    newAccount.getEmail(),
-                    null,
-                    AuthorityUtils.createAuthorityList("USER")
+                    newAccount.getEmail(), null, AuthorityUtils.createAuthorityList("USER")
             );
             String accessToken = jwtTokenProvider.createAccessToken(jwtAuth);
             String refreshToken = jwtTokenProvider.createRefreshToken(jwtAuth);
@@ -163,20 +158,22 @@ public class AccountController {
             newAccount.setRefreshToken(refreshToken);
             accountRepository.save(newAccount);
 
-            String redirectUrl = String.format("%s/?accessToken=%s",
-                    FRONTEND_APP_BASE_URL+"/",
-                    URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()),
-                    jwtTokenProvider.getAccessTokenRemainingExpirySeconds());
+            // 리다이렉션 대신 토큰 정보를 담은 JSON 응답
+            TokenDTO tokenDTO = TokenDTO.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn(jwtTokenProvider.getAccessTokenRemainingExpirySeconds())
+                    .build();
 
-            response.sendRedirect(redirectUrl); // 브라우저를 이 URL로 리다이렉트
-            return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
+            return ResponseEntity.ok(tokenDTO);
 
         } catch (IllegalStateException e) { // 계정 중복 등
-            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=account_exists&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8.toString()));
-            return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
+            // 리다이렉션 대신 에러 JSON 응답 (409 Conflict)
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "account_exists", "message", e.getMessage()));
         } catch (Exception e) {
-            response.sendRedirect(FRONTEND_APP_BASE_URL + "/signup?error=signup_failed&message=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8.toString()));
-            return; // 변경: 리다이렉트 후 명시적으로 메서드 종료
+            // 리다이렉션 대신 에러 JSON 응답 (500 Internal Server Error)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "signup_failed", "message", e.getMessage()));
         }
     }
 

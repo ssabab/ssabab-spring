@@ -4,7 +4,7 @@ services:
       context: ./ssabab-spring-back
       dockerfile: Dockerfile
     
-    image: yooseunghyeon/ssabab:back-v1.17
+    image: yooseunghyeon/ssabab:back-v1.21
 
     container_name: ssabab-back
 
