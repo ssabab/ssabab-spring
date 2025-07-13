@@ -1,6 +1,7 @@
 // config.SecurityConfig.java
 package ssabab.back.config;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,8 @@ public class SecurityConfig {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Value("${jwt.access-token-expiry}")
+    private long accessTokenExpirySeconds;
     @Value("${jwt.refresh-token-expiry}")
     private long refreshTokenExpirySeconds;
     @Value("${front.url}")
@@ -154,12 +157,23 @@ public class SecurityConfig {
                 existingAccount.setRefreshToken(refreshToken);
                 accountRepository.save(existingAccount);
 
-                String redirectUrl = String.format("%s/?accessToken=%s&refreshToken=%s",
-                        FRONTEND_APP_BASE_URL,
-                        URLEncoder.encode(accessToken, StandardCharsets.UTF_8.toString()),
-                        URLEncoder.encode(refreshToken, StandardCharsets.UTF_8.toString()));
+                // 1. Refresh Token을 HttpOnly 쿠키로 설정
+                Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+                refreshTokenCookie.setHttpOnly(true);
+                refreshTokenCookie.setSecure(true); // HTTPS 환경에서만 전송
+                refreshTokenCookie.setPath("/"); // 모든 경로에서 쿠키 사용
+                refreshTokenCookie.setMaxAge((int) refreshTokenExpirySeconds); // 만료 시간 설정
+                response.addCookie(refreshTokenCookie);
 
-                response.sendRedirect(redirectUrl);
+                // 2. Access Token은 일반 쿠키로 설정 (프론트에서 읽을 수 있도록)
+                Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
+                accessTokenCookie.setSecure(true);
+                accessTokenCookie.setPath("/");
+                accessTokenCookie.setMaxAge((int) accessTokenExpirySeconds);
+                response.addCookie(accessTokenCookie);
+
+                // 3. 토큰이 없는 깔끔한 URL로 리다이렉트
+                response.sendRedirect(FRONTEND_APP_BASE_URL);
 
             } else {
                 StringBuilder redirectUrlBuilder = new StringBuilder(FRONTEND_APP_BASE_URL + "/signup?");
