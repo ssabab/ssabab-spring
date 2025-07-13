@@ -3,17 +3,18 @@ package ssabab.back.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ssabab.back.dto.*;
-import ssabab.back.entity.*;
+import ssabab.back.entity.MonthlyCount;
+import ssabab.back.entity.MonthlyFoodRanking;
+import ssabab.back.entity.MonthlyStatistic;
 import ssabab.back.repository.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -25,42 +26,48 @@ public class MonthlyAnalysisService {
     private final MonthlyFrequentEvaluatorRepository monthlyFrequentEvaluatorRepository;
 
     public MonthlyAnalysisResponse getMonthlyAnalysisData() {
-        // Top 5 Foods
-        List<TopFoodDTO> topFoods = monthlyFoodRankingRepository.findByRankTypeOrderByRankAsc("best").stream()
-                .limit(5)
-                .map(r -> new TopFoodDTO(r.getFoodName(), r.getCount(), r.getAvgScore().doubleValue()))
-                .collect(Collectors.toList());
+        // 1. Top/Worst 랭킹을 한 번의 DB 접근으로 통합 조회
+        List<MonthlyFoodRanking> rankings = monthlyFoodRankingRepository.findByRankTypeInOrderByRankAsc(List.of("best", "worst"));
 
-        // Worst 5 Foods
-        List<TopFoodDTO> worstFoods = monthlyFoodRankingRepository.findByRankTypeOrderByRankAsc("worst").stream()
-                .limit(5)
-                .map(r -> new TopFoodDTO(r.getFoodName(), r.getCount(), r.getAvgScore().doubleValue()))
-                .collect(Collectors.toList());
+        // 조회된 엔티티 리스트를 메모리에서 DTO로 변환하며 best와 worst로 분리
+        Map<String, List<TopFoodDTO>> rankingsByType = rankings.stream()
+                .collect(Collectors.groupingBy(
+                        MonthlyFoodRanking::getRankType,
+                        Collectors.mapping(r -> new TopFoodDTO(r.getFoodName(), r.getCount(), r.getAvgScore().doubleValue()), Collectors.toList())
+                ));
 
-        // 월별 방문자 및 평가 수 데이터 (현재 월과 이전 월 모두 조회 필요)
+        List<TopFoodDTO> topFoods = rankingsByType.getOrDefault("best", List.of()).stream().limit(5).collect(Collectors.toList());
+        List<TopFoodDTO> worstFoods = rankingsByType.getOrDefault("worst", List.of()).stream().limit(5).collect(Collectors.toList());
+
+        // 2. 현재 달과 지난달 통계를 한 번의 DB 접근으로 통합 조회
         LocalDate today = LocalDate.now();
-        int currentMonthValue = today.getMonthValue();
-        int previousMonthValue = today.minusMonths(1).getMonthValue();
+        Long currentMonthValue = (long) today.getMonthValue();
+        Long previousMonthValue = (long) today.minusMonths(1).getMonthValue();
 
-        MonthlyCount currentMonthCount = monthlyCountRepository.findById(Long.valueOf(currentMonthValue)).orElse(new MonthlyCount(Long.valueOf(currentMonthValue), 0L, 0L, 0L));
-        MonthlyCount previousMonthCount = monthlyCountRepository.findById(Long.valueOf(previousMonthValue)).orElse(new MonthlyCount(Long.valueOf(previousMonthValue), 0L, 0L, 0L));
+        Map<Long, MonthlyCount> countsByMonth = monthlyCountRepository.findByMonthIn(List.of(currentMonthValue, previousMonthValue))
+                .stream()
+                .collect(Collectors.toMap(MonthlyCount::getMonth, Function.identity()));
 
-        // 월별 방문자
+        MonthlyCount emptyCount = new MonthlyCount(0L, 0L, 0L, 0L);
+        MonthlyCount currentMonthCount = countsByMonth.getOrDefault(currentMonthValue, emptyCount);
+        MonthlyCount previousMonthCount = countsByMonth.getOrDefault(previousMonthValue, emptyCount);
+
+        // 월별 방문자 DTO 구성
         MonthlyVisitorsDTO monthlyVisitors = MonthlyVisitorsDTO.builder()
                 .current(currentMonthCount.getEvaluator())
                 .previous(previousMonthCount.getEvaluator())
                 .totalCumulative(currentMonthCount.getCumulative())
-                .previousMonthCumulative(currentMonthCount.getCumulative() - currentMonthCount.getDifference()) // 이전달 누적 = 현재 누적 - 현재 증가분
+                .previousMonthCumulative(currentMonthCount.getCumulative() - currentMonthCount.getDifference())
                 .build();
 
-        // 누적 평가
+        // 누적 평가 DTO 구성
         CumulativeEvaluationsDTO cumulativeEvaluations = CumulativeEvaluationsDTO.builder()
                 .currentMonth(currentMonthCount.getEvaluator())
                 .totalCumulative(currentMonthCount.getCumulative())
                 .previousMonthCumulative(currentMonthCount.getCumulative() - currentMonthCount.getDifference())
                 .build();
 
-        // 평점 분포
+        // 3. 나머지 통계는 이미 단일 쿼리로 효율적으로 동작
         MonthlyStatistic stats = monthlyStatisticRepository.findAll().stream().findFirst().orElse(new MonthlyStatistic());
         RatingDistributionDTO ratingDistribution = RatingDistributionDTO.builder()
                 .min(stats.getMin() != null ? stats.getMin().doubleValue() : 0.0)
@@ -72,7 +79,6 @@ public class MonthlyAnalysisService {
                 .stdDev(stats.getStdev() != null ? stats.getStdev().doubleValue() : 0.0)
                 .build();
 
-        // Frequent Visitors
         List<FrequentVisitorDTO> frequentVisitors = monthlyFrequentEvaluatorRepository.findAllByOrderByRankAsc().stream()
                 .limit(5)
                 .map(f -> {
@@ -81,12 +87,12 @@ public class MonthlyAnalysisService {
                 })
                 .collect(Collectors.toList());
 
-        // 월간 전체 평점
         MonthlyOverallRatingDTO monthlyOverallRating = MonthlyOverallRatingDTO.builder()
                 .average(stats.getAvg() != null ? stats.getAvg().doubleValue() : 0.0)
                 .totalEvaluations(currentMonthCount.getEvaluator())
                 .build();
 
+        // 최종 응답 DTO 빌드
         return MonthlyAnalysisResponse.builder()
                 .topFoods(topFoods)
                 .worstFoods(worstFoods)

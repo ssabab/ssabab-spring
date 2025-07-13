@@ -2,12 +2,14 @@
 package ssabab.back.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ssabab.back.entity.DmUserReviewWord;
 import ssabab.back.entity.DmUserReviewWordId;
-
 import java.util.List;
 
 public interface DmUserReviewWordRepository extends JpaRepository<DmUserReviewWord, DmUserReviewWordId> {
-    // 복합키의 일부인 userId로 조회하기 위한 메소드
-    List<DmUserReviewWord> findByUserId(Long userId);
+    // 💡 JPQL을 사용하여 엔티티 목록을 명시적으로 조회합니다.
+    @Query("SELECT w FROM DmUserReviewWord w WHERE w.userId = :userId")
+    List<DmUserReviewWord> findByUserId(@Param("userId") Long userId);
 }

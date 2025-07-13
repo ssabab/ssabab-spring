@@ -2,6 +2,7 @@
 package ssabab.back.controller;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,10 +31,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
+
 import org.springframework.security.core.authority.AuthorityUtils;
 
 /**
@@ -261,11 +260,19 @@ public class AccountController {
      * Access Token 재발급 엔드포인트
      */
     @PostMapping("/refresh")
-    public ResponseEntity<Object> refreshAccessToken(@RequestBody Map<String, String> requestBody) {
-        String refreshToken = requestBody.get("refreshToken");
+    public ResponseEntity<Object> refreshAccessToken(HttpServletRequest request) {
+        // @RequestBody 대신 HttpServletRequest에서 쿠키를 직접 찾습니다.
+        String refreshToken = null;
+        if (request.getCookies() != null) {
+            refreshToken = Arrays.stream(request.getCookies())
+                    .filter(cookie -> cookie.getName().equals("refreshToken"))
+                    .findFirst()
+                    .map(Cookie::getValue)
+                    .orElse(null);
+        }
 
         if (!StringUtils.hasText(refreshToken) || !jwtTokenProvider.validateToken(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Refresh Token"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or Missing Refresh Token"));
         }
 
         try {
@@ -279,14 +286,12 @@ public class AccountController {
 
             String newAccessToken = jwtTokenProvider.createAccessToken(authentication);
 
-            TokenDTO tokenDTO = TokenDTO.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(refreshToken)
-                    .tokenType("Bearer")
-                    .expiresIn(jwtTokenProvider.getAccessTokenRemainingExpirySeconds())
-                    .build();
-
-            return ResponseEntity.ok(Map.of("message", "Access token refreshed", "token", tokenDTO));
+            // 성공 시, 새로운 Access Token만 응답 본문에 담아 전달합니다.
+            // Refresh Token은 이미 브라우저 쿠키에 있으므로 다시 보낼 필요가 없습니다.
+            return ResponseEntity.ok(Map.of(
+                    "message", "Access token refreshed",
+                    "accessToken", newAccessToken
+            ));
 
         } catch (ExpiredJwtException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Refresh Token expired. Please log in again."));
